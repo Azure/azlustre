@@ -1,0 +1,207 @@
+{
+    "location": "variables.location",
+    "resource_group": "variables.resource_group",
+    "install_from": "headnode",
+    "admin_user": "hpcadmin",
+    "variables": {
+        "hpc_image": "OpenLogic:CentOS-HPC:7.7:7.7.2020062600",
+        "location": "westeurope",
+        "resource_group": "<NOT-SET>",
+        "lustre_image": "centos-7.8-lustre-2.13.5",
+        "compute_instances": 4,
+        "vm_type": "Standard_D48s_v3",
+        "vnet_resource_group": "variables.resource_group",
+        "lustre_name": "lustre",
+        "lustre_mount": "/lustre",
+        "lustre_tier": "prem",
+        "oss_disk_setup": "separate",
+        "ost_per_oss": 6,
+        "lustre_stripe": 1
+    },
+    "vnet": {
+        "resource_group": "variables.vnet_resource_group",
+        "name": "hpcvnet",
+        "address_prefix": "10.2.0.0/20",
+        "subnets": {
+            "compute": "10.2.4.0/22"
+        }
+    },
+    "resources": {
+        "headnode": {
+            "type": "vm",
+            "vm_type": "Standard_D8s_v3",
+            "accelerated_networking": true,
+            "public_ip": true,
+            "image": "variables.hpc_image",
+            "subnet": "compute",
+            "data_disks": [1024, 1024],
+            "storage_sku": "Premium_LRS",
+            "tags": [
+                "all",
+                "headnode"
+            ]
+        },
+        "compute": {
+            "type": "vmss",
+            "vm_type": "variables.vm_type",
+            "instances": "variables.compute_instances",
+            "accelerated_networking": true,
+            "image": "variables.hpc_image",
+            "subnet": "compute",
+            "tags": [
+                "all",
+                "compute"
+            ]
+        }
+    },
+    "install": [
+        {
+            "script": "disable-selinux.sh",
+            "tag": "all",
+            "sudo": true
+        },
+        {
+            "script": "cndefault.sh",
+            "tag": "all",
+            "sudo": true
+        },
+        {
+            "script": "create_raid0.sh",
+            "tag": "headnode",
+            "args": ["/dev/md10", "/dev/sd[c-d]"],
+            "sudo": true
+        },
+        {
+            "script": "make_filesystem.sh",
+            "tag": "headnode",
+            "args": ["/dev/md10", "xfs", "/share"],
+            "sudo": true
+        },
+        {
+            "script": "install-nfsserver.sh",
+            "tag": "headnode",
+            "args": ["/share"],
+            "sudo": true
+        },
+        {
+            "script": "nfsclient.sh",
+            "args": [
+                "$(<hostlists/tags/headnode)"
+            ],
+            "tag": "compute",
+            "sudo": true
+        },
+        {
+            "script": "localuser.sh",
+            "args": [
+                "$(<hostlists/tags/headnode)"
+            ],
+            "tag": "all",
+            "sudo": true
+        },
+        {
+            "script": "lustre_client_packages.sh",
+            "tag": "all",
+            "sudo": true
+        },
+        {
+            "script": "build_ior.sh",
+            "tag": "headnode"
+        },
+        {
+            "type": "local_script",
+            "script": "deploy_lustre.sh",
+            "args": [
+                "variables.lustre_name",
+                "variables.compute_instances",
+                "$(<../hpcadmin_id_rsa.pub)",
+                "variables.resource_group",
+                "variables.lustre_image",
+                "variables.resource_group",
+                "hpcvnet",
+                "compute",
+                "variables.lustre_tier",
+                "variables.oss_disk_setup"
+            ],
+            "deps": [
+                "azuredeploy.json"
+            ]
+        },
+        {
+            "script": "wait_for_lustre.sh",
+            "tag": "headnode",
+            "args": [
+                "variables.lustre_name"
+            ],
+            "sudo": true
+        },
+        {
+            "script": "lustre_mount.sh",
+            "tag": "all",
+            "args": [
+                "variables.lustre_name",
+                "variables.lustre_mount"
+            ],
+            "sudo": true
+        },
+        {
+            "script": "wait_for_all_oss.sh",
+            "tag": "headnode",
+            "args": [
+                "variables.lustre_mount",
+                "variables.compute_instances",
+                "variables.ost_per_oss"
+            ],
+            "sudo": true
+        },
+        {
+            "script": "write_oss_hostfile.sh",
+            "tag": "headnode"
+        },
+        {
+            "script": "fix_lv2_network.sh",
+            "tag": "headnode",
+            "args": [
+                "variables.lustre_tier",
+                "lustre",
+                "oss"
+            ]
+        },
+        {
+            "script": "check_an.sh",
+            "tag": "headnode",
+            "args": [
+                "lustre",
+                "oss"
+            ]
+        },
+        {
+            "script": "check_an.sh",
+            "tag": "headnode",
+            "args": [
+                "hpcadmin",
+                "hostlists/compute"
+            ]
+        },
+        {
+            "script": "run_ior.sh",
+            "tag": "headnode",
+            "args": [
+                "hostlists/tags/compute",
+                24,
+                16,
+                "lustre",
+                "oss",
+                "variables.lustre_tier",
+                "variables.oss_disk_setup",
+                "variables.lustre_stripe",
+                "variables.ost_per_oss"
+            ]
+        },
+        {
+            "type": "local_script",
+            "script": "copy_back_results.sh",
+            "tag": "headnode"
+        }
+    ]
+}
