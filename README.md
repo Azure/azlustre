@@ -1,6 +1,6 @@
 # azlustre
 
-[![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Faz-lustre%2Fmaster%2Fazuredeploy.json)
+[![Deploy to Azure](https://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazlustre%2Fmaster%2Fazuredeploy.json)
 
 This is a project to provision a Lustre cluster as quickly as possible.  All the Lustre setup scripting is taken from the [AzureHPC](https://github.com/Azure/azurehpc) but the difference in this project is the Lustre cluster is provisioned through an [ARM template](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/) using a custom image.
 
@@ -16,7 +16,7 @@ The ARM template performs the installation with [cloud init](https://docs.micros
 Check out the repository:
 
 ```
-git clone https://github.com/Azure/az-lustre
+git clone https://github.com/Azure/azlustre
 ```
 
 ### Building the image
@@ -24,7 +24,7 @@ git clone https://github.com/Azure/az-lustre
 Packer is required for the build so download the latest version for your operating system from https://www.packer.io.  It is distributed as a single file so just put it somewhere that is in your `PATH`.  Go into the packer directory:
 
 ```
-cd az-lustre/packer
+cd azlustre/packer
 ```
 
 The following options are required to build:
