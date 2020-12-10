@@ -99,12 +99,12 @@ fi
 
 if [ "${use_hsm,,}" = "true" ]; then
 
-	$script_dir/lfshsm.sh "$mds_ip" "$storage_account" "$storage_key" "$storage_container" "$lustre_version"
+	$script_dir/lfshsm.sh "$mds" "$storage_account" "$storage_key" "$storage_container" "$lustre_version"
 
 	if [ "$HOSTNAME" = "$mds" ]; then
 
 		# IMPORT CONTAINER
-		$script_dir/lfsclient.sh $mds_ip /lustre
+		$script_dir/lfsclient.sh $mds /lustre
 		$script_dir/lfsimport.sh "$storage_account" "$storage_key" "$storage_container" /lustre "$lustre_version"
 
 	fi
