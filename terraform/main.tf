@@ -52,9 +52,9 @@ resource "azurerm_network_interface" "mds" {
   resource_group_name = azurerm_resource_group.lustre.name
 
   ip_configuration {
-    name                                    = "ipconfig-mds-1-nic"
-    subnet_id                               = azurerm_subnet.client.id
-    private_ip_address_allocation           = "Dynamic"
+    name                          = "ipconfig-mds-1-nic"
+    subnet_id                     = azurerm_subnet.client.id
+    private_ip_address_allocation = "Dynamic"
   }
 }
 
@@ -66,8 +66,8 @@ resource "azurerm_linux_virtual_machine" "mds" {
   size                  = "Standard_D16s_v3"
 
   os_disk {
-    name              = "lustre-mds-1-os"
-    caching           = "ReadWrite"
+    name                 = "lustre-mds-1-os"
+    caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"
   }
 
@@ -83,8 +83,8 @@ resource "azurerm_linux_virtual_machine" "mds" {
   disable_password_authentication = true
 
   admin_ssh_key {
-    username       = "lustre"
-    public_key     = file("~/.ssh/id_rsa.pub")
+    username   = "lustre"
+    public_key = file("~/.ssh/id_rsa.pub")
   }
 
   boot_diagnostics {
@@ -116,9 +116,9 @@ resource "azurerm_network_interface" "mgs" {
   resource_group_name = azurerm_resource_group.lustre.namey
 
   ip_configuration {
-    name                                    = "ipconfig-mgs-1-nic"
-    subnet_id                               = azurerm_subnet.client.id
-    private_ip_address_allocation           = "Dynamic"
+    name                          = "ipconfig-mgs-1-nic"
+    subnet_id                     = azurerm_subnet.client.id
+    private_ip_address_allocation = "Dynamic"
   }
 }
 
@@ -146,8 +146,8 @@ resource "azurerm_linux_virtual_machine" "mgs" {
   size                  = "Standard_D16s_v3"
 
   os_disk {
-    name              = "lustre-mgs-1-os"
-    caching           = "ReadWrite"
+    name                 = "lustre-mgs-1-os"
+    caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"
   }
 
@@ -163,8 +163,8 @@ resource "azurerm_linux_virtual_machine" "mgs" {
   disable_password_authentication = true
 
   admin_ssh_key {
-    username       = "lustre"
-    public_key     = file("~/.ssh/id_rsa.pub")
+    username   = "lustre"
+    public_key = file("~/.ssh/id_rsa.pub")
   }
 
   boot_diagnostics {
@@ -181,9 +181,9 @@ resource "azurerm_network_interface" "oss" {
   count               = var.oss-nodes
 
   ip_configuration {
-    name                                    = "ipconfig-oss-nic-${count.index}"
-    subnet_id                               = azurerm_subnet.client.id
-    private_ip_address_allocation           = "Dynamic"
+    name                          = "ipconfig-oss-nic-${count.index}"
+    subnet_id                     = azurerm_subnet.client.id
+    private_ip_address_allocation = "Dynamic"
   }
 }
 
@@ -196,8 +196,8 @@ resource "azurerm_linux_virtual_machine" "oss" {
   size                  = "Standard_D32s_v3"
 
   os_disk {
-    name              = "lustre-oss-${count.index}-os"
-    caching           = "ReadWrite"
+    name                 = "lustre-oss-${count.index}-os"
+    caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"
   }
 
@@ -213,8 +213,8 @@ resource "azurerm_linux_virtual_machine" "oss" {
   disable_password_authentication = true
 
   admin_ssh_key {
-    username       = "lustre"
-    public_key     = file("~/.ssh/id_rsa.pub")
+    username   = "lustre"
+    public_key = file("~/.ssh/id_rsa.pub")
   }
 
   boot_diagnostics {
@@ -286,8 +286,8 @@ resource "azurerm_linux_virtual_machine" "jump" {
   size                  = "Standard_D2s_v3"
 
   os_disk {
-    name              = "lustre-jump-server-os"
-    caching           = "ReadWrite"
+    name                 = "lustre-jump-server-os"
+    caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"
   }
 
@@ -303,8 +303,8 @@ resource "azurerm_linux_virtual_machine" "jump" {
   disable_password_authentication = true
 
   admin_ssh_key {
-    username       = "lustre"
-    public_key     = file("~/.ssh/id_rsa.pub")
+    username   = "lustre"
+    public_key = file("~/.ssh/id_rsa.pub")
   }
 
   boot_diagnostics {
