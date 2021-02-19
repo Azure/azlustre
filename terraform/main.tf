@@ -44,76 +44,82 @@ resource "azurerm_subnet" "client" {
   address_prefixes     = ["10.10.4.0/23"]
 }
 
-## Section for MDS
+# ## Section for MDS
 
-resource "azurerm_network_interface" "mds" {
-  name                = "lustre-mds-1-nic"
-  location            = azurerm_resource_group.lustre.location
-  resource_group_name = azurerm_resource_group.lustre.name
+# resource "azurerm_network_interface" "mds" {
+#   name                = "lustre-mds-1-nic"
+#   location            = azurerm_resource_group.lustre.location
+#   resource_group_name = azurerm_resource_group.lustre.name
 
-  ip_configuration {
-    name                          = "ipconfig-mds-1-nic"
-    subnet_id                     = azurerm_subnet.client.id
-    private_ip_address_allocation = "Dynamic"
-  }
-}
+#   ip_configuration {
+#     name                          = "ipconfig-mds-1-nic"
+#     subnet_id                     = azurerm_subnet.client.id
+#     private_ip_address_allocation = "Dynamic"
+#   }
+# }
 
-resource "azurerm_linux_virtual_machine" "mds" {
-  name                  = "lustre-mds-1"
-  location              = azurerm_resource_group.lustre.location
-  resource_group_name   = azurerm_resource_group.lustre.name
-  network_interface_ids = [ azurerm_network_interface.mds.id ]
-  size                  = "Standard_D16s_v3"
+# resource "azurerm_linux_virtual_machine" "mds" {
+#   name                  = "lustre-mds-1"
+#   location              = azurerm_resource_group.lustre.location
+#   resource_group_name   = azurerm_resource_group.lustre.name
+#   network_interface_ids = [ azurerm_network_interface.mds.id ]
+#   size                  = "Standard_D16s_v3"
 
-  os_disk {
-    name                 = "lustre-mds-1-os"
-    caching              = "ReadWrite"
-    storage_account_type = "Premium_LRS"
-  }
+#   os_disk {
+#     name                 = "lustre-mds-1-os"
+#     caching              = "ReadWrite"
+#     storage_account_type = "Premium_LRS"
+#   }
 
-  source_image_reference {
-    publisher = "OpenLogic"
-    offer     = "CentOS"
-    sku       = "7.5"
-    version   = "latest"
-  }
+#   source_image_reference {
+#     publisher = "OpenLogic"
+#     offer     = "CentOS"
+#     sku       = "7_9"
+#     version   = "latest"
+#   }
 
-  computer_name  = "lustre-mds-1"
-  admin_username = "lustre"
-  disable_password_authentication = true
+#   computer_name  = "lustre-mds-1"
+#   admin_username = "lustre"
+#   disable_password_authentication = true
+#   custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "MDS", index = 0, diskcount = 1, mgs_ip=azurerm_network_interface.mgs.private_ip_address, fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
 
-  admin_ssh_key {
-    username   = "lustre"
-    public_key = file("~/.ssh/id_rsa.pub")
-  }
+#   admin_ssh_key {
+#     username   = "lustre"
+#     public_key = file("~/.ssh/id_rsa.pub")
+#   }
 
-  boot_diagnostics {
-    storage_account_uri = azurerm_storage_account.stor.primary_blob_endpoint
-  }
-}
+#   boot_diagnostics {
+#     storage_account_uri = azurerm_storage_account.stor.primary_blob_endpoint
+#   }
 
-resource "azurerm_managed_disk" "mds" {
-  name                 = "lustre-mds-1-data"
-  location             = azurerm_resource_group.lustre.location
-  create_option        = "Empty"
-  disk_size_gb         = 32
-  resource_group_name  = azurerm_resource_group.lustre.name
-  storage_account_type = "Standard_LRS"
-}
+#   depends_on = [ 
+#     azurerm_network_interface.mgs,
+#     azurerm_linux_virtual_machine.mgs
+#   ]
+# }
 
-resource "azurerm_virtual_machine_data_disk_attachment" "mds" {
-  virtual_machine_id = azurerm_linux_virtual_machine.mds.id
-  managed_disk_id    = azurerm_managed_disk.mds.id
-  lun                = 0
-  caching            = "None"
-}
+# resource "azurerm_managed_disk" "mds" {
+#   name                 = "lustre-mds-1-data"
+#   location             = azurerm_resource_group.lustre.location
+#   create_option        = "Empty"
+#   disk_size_gb         = 32
+#   resource_group_name  = azurerm_resource_group.lustre.name
+#   storage_account_type = "Standard_LRS"
+# }
 
-## Section for MGS
+# resource "azurerm_virtual_machine_data_disk_attachment" "mds" {
+#   virtual_machine_id = azurerm_linux_virtual_machine.mds.id
+#   managed_disk_id    = azurerm_managed_disk.mds.id
+#   lun                = 0
+#   caching            = "None"
+# }
+
+# ## Section for MGS
 
 resource "azurerm_network_interface" "mgs" {
   name                = "lustre-mgs-1-nic"
   location            = azurerm_resource_group.lustre.location
-  resource_group_name = azurerm_resource_group.lustre.namey
+  resource_group_name = azurerm_resource_group.lustre.name
 
   ip_configuration {
     name                          = "ipconfig-mgs-1-nic"
@@ -154,13 +160,14 @@ resource "azurerm_linux_virtual_machine" "mgs" {
   source_image_reference {
     publisher = "OpenLogic"
     offer     = "CentOS"
-    sku       = "7.5"
+    sku       = "7_9"
     version   = "latest"
   }
 
   computer_name  = "lustre-mgs-1"
   admin_username = "lustre"
   disable_password_authentication = true
+  custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "HEAD", index = 0, diskcount = 1, mgs_ip="0.0.0.0", fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
 
   admin_ssh_key {
     username   = "lustre"
@@ -204,14 +211,15 @@ resource "azurerm_linux_virtual_machine" "oss" {
   source_image_reference {
     publisher = "OpenLogic"
     offer     = "CentOS"
-    sku       = "7.5"
+    sku       = "7_9"
     version   = "latest"
   }
 
   computer_name  = "lustre-oss-${count.index}"
   admin_username = "lustre"
   disable_password_authentication = true
-
+  custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "OSS", index = count.index, diskcount = var.oss-nodes-disks, mgs_ip=azurerm_network_interface.mgs.private_ip_address, fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
+  
   admin_ssh_key {
     username   = "lustre"
     public_key = file("~/.ssh/id_rsa.pub")
@@ -220,6 +228,11 @@ resource "azurerm_linux_virtual_machine" "oss" {
   boot_diagnostics {
     storage_account_uri = azurerm_storage_account.stor.primary_blob_endpoint
   }
+
+  depends_on = [ 
+    azurerm_network_interface.mgs,
+    azurerm_linux_virtual_machine.mgs
+  ]
 }
 
 # Make map
@@ -294,7 +307,7 @@ resource "azurerm_linux_virtual_machine" "jump" {
   source_image_reference {
     publisher = "OpenLogic"
     offer     = "CentOS"
-    sku       = "7.5"
+    sku       = "7_9"
     version   = "latest"
   }
 
@@ -313,6 +326,6 @@ resource "azurerm_linux_virtual_machine" "jump" {
 }
 
 output "jump_ip_addr" {
-  value = azurerm_public_ip.jump
+  value = azurerm_public_ip.jump.ip_address
   description = "Public IP for the jump server, use SSH key to login"
 }

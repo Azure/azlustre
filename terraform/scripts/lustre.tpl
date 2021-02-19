@@ -1,13 +1,15 @@
 #!/bin/bash
 
-# Source can be found at https://github.com/Azure/azure-quickstart-templates/blob/master/intel-lustre-client-server/scripts/lustre.sh
+# Reworked scripts to set up MDS+MGS on one machine + multiple OSS nodes
+# Sources can be found at:
+# - https://github.com/Azure/azure-quickstart-templates/blob/master/intel-lustre-client-server/scripts/lustre.sh (MIT)
+# - https://github.com/Azure/azurehpc/blob/master/scripts/lfsrepo.sh (MIT)
+# - https://github.com/Azure/azurehpc/blob/master/scripts/lfspkgs.sh (MIT)
+#
+# Changes:
+# * Updated for CentOS 7.9
 # * Modified to work with cloud-init
 # * TPL'd for Terraform templatefile functionality
-
-# Usage:
-# ./lustre_configure.sh -n MGS -i 0 -d 1 -m 10.1.0.4 -l 10.1.0.4 -f scratch
-# ./lustre_configure.sh -n MDS -i 1 -d 1 -m 10.1.0.4 -l 10.1.0.4 -f scratch
-# ./lustre_configure.sh -n OSS -i 1 -d 4 -m 10.1.0.4 -l 10.1.0.4 -f scratch
 
 log()
 {
@@ -15,22 +17,8 @@ log()
 	logger "$1"
 }
 
-# Initialize local variables
-# Get today's date into YYYYMMDD format
-NOW=$(date +"%Y%m%d")
-DEVICES_BLACKLIST="/dev/sda|/dev/sdb"
-DEVICES_LIST=($(ls -1 /dev/sd* | egrep -v "${DEVICES_BLACKLIST}" | egrep -v "[0-9]$"))
-
-# Parameters to be set through TF
-NODETYPE=${type}
-NODEINDEX=${index}
-NODETYPEDISKCOUNT=${diskcount}
-MGSIP=${mgs_ip}
-LOCALIP=${local_ip}
-FILESYSTEMNAME=${fs_name}
-
 fatal() {
-    msg=${1:-"Unknown Error"}
+    msg=$${1:-"Unknown Error"}
     log "FATAL ERROR: $msg"
     exit 1
 }
@@ -51,173 +39,160 @@ retry() {
 			return 1
         else
             log "Command $cmd attempt $attempt_num failed. Trying again in 5 + $attempt_num seconds..."
-            sleep $(( 5 + attempt_num++ ))
+            sleep $(( 5 * attempt_num++ ))
         fi
     done
 }
 
-# You must be root to run this script
-if [ "${UID}" -ne 0 ]; then
-    fatal "You must be root to run this script."
-fi
-
-if [[ -z ${NODETYPE} ]]; then
-    fatal "No node type specified, can't proceed."
-fi
-
-if [[ -z ${NODEINDEX} ]]; then
-    fatal "No node index specified, can't proceed."
-fi
-
-if [[ -z ${NODETYPEDISKCOUNT} ]]; then
-    fatal "No node type disk count specified, can't proceed."
-fi
-
-if [[ -z ${MGSIP} ]]; then
-    fatal "No MGS IP specified, can't proceed."
-fi
-
-if [[ -z ${LOCALIP} ]]; then
-    fatal "No local IP specified, can't proceed."
-fi
-
-if [[ -z ${FILESYSTEMNAME} ]]; then
-    fatal "No filesystem name specified, can't proceed."
-fi
-
-log "NOW=$NOW NODETYPE=$NODETYPE NODEINDEX=$NODEINDEX MGSIP=$MGSIP LOCALIP=$LOCALIP FILESYSTEMNAME=$FILESYSTEMNAME"
-
 add_to_fstab() {
-	device="${1}"
-	mount_point="${2}"
+	device="$${1}"
+	mount_point="$${2}"
 	if grep -q "$device" /etc/fstab
 	then
 		log "Not adding $device to /etc/fstab (it's  already there)"
 	else
 		line="$device $mount_point lustre defaults,_netdev 0 0"
-		log "${line}"
-		echo -e "${line}" >> /etc/fstab
+		log "$${line}"
+		echo -e "$${line}" >> /etc/fstab
 	fi
 }
 
-create_mgs() {
-	log "Create MGS"
+# Parameters to be set through TF
+node_type=${type}
+node_index=$((${index}))
+node_type_disk_count=${diskcount}
+mgs_ip=${mgs_ip}
+file_system_name=${fs_name}
+
+log "node_type=$node_type node_type_disk_count=$node_type_disk_count node_index=$node_index mgs_ip=$mgs_ip file_system_name=$file_system_name"
+
+create_mgs_mdt() {
+	log "Creating MGS and MDT node (Headnode) on /dev/sdc"
+	
+	# TODO Make this dynamic?
+	device="/dev/sdc"	
 
 	# Make MGS filesystem which is always on /dev/sdc of the MGS node
-	mkfs.lustre --fsname=$FILESYSTEMNAME --mgs --reformat /dev/sdc
+	mkfs.lustre --fsname=$file_system_name --mgs --mdt --mountfsoptions="user_xattr,errors=remount-ro" --backfstype=ldiskfs --reformat $device --index 0 || exit 1
 
 	uuid=$(blkid -o value -s UUID /dev/sdc)
-	log "MGS UUID=$uuid"
+	log "Node UUID=$uuid"
+	label=$(blkid -c/dev/null -o value -s LABEL /dev/sdc)	
+	log "Node label=$label"
 
-	label=$(blkid -c/dev/null -o value -s LABEL /dev/sdc)
-	log "MGS LABEL=$label"
+	mount_point="/mnt/mgsmds"
 
-	# Log device info
-	dumpe2fs -h /dev/sdc | logger
-
-	# Create mount directory
-	mount_point=/mnt/targets/$label
 	mkdir -p $mount_point
-	log "Created mount point directory $mount_point"
 
 	# Add to /etc/fstab so that mount persists across reboots
-	device_by_uuid="UUID=$uuid"
-	add_to_fstab $device_by_uuid $mount_point
-
+	add_to_fstab "UUID=$uuid" $mount_point
 	retry 5 mount -a
-	log "Mounted /dev/sdc as $mount_point"
-}
 
-create_mds() {
-	log "Create MDS"
+	log "Mounted $device as $mount_point"
 
-	((index=$NODEINDEX*$NODETYPEDISKCOUNT))
+	# # set up hsm
+    # lctl set_param -P mdt.*-MDT0000.hsm_control=enabled
+    # lctl set_param -P mdt.*-MDT0000.hsm.default_archive_id=1
+    # lctl set_param mdt.*-MDT0000.hsm.max_requests=128
 
-	for device in "${DEVICES_LIST[@]}";
-	do
-		log $device $index
-
-		mkfs.lustre --fsname=$FILESYSTEMNAME --mdt --mgsnode=$MGSIP --index=$index --reformat $device
-
-		# Disable MDS check of user being the same on the clients and MDS nodes
-		tunefs.lustre --param mdt.identity_upcall=NONE $device
-
-		uuid=$(blkid -o value -s UUID $device)
-		log "MDS UUID=$uuid"
-
-		label=$(blkid -c/dev/null -o value -s LABEL $device)
-		log "MDS LABEL=$label"
-
-		dumpe2fs -h $device | logger
-
-		# Create mount directory
-		mount_point=/mnt/targets/$label
-		mkdir -p $mount_point
-		log "Created mount point directory $mount_point"
-
-		# Mount the current device
-		mount -t lustre $device $mount_point
-
-		# Add to /etc/fstab so that mount persists across reboots
-		device_by_uuid="UUID=$uuid"
-		add_to_fstab $device_by_uuid $mount_point
-
-		((index=index+1))
-	done
-
-	# Mount everything based on what is defined in the /etc/fstab
-	retry 5 mount -a
+    # # allow any user and group ids to write
+    # lctl set_param mdt.*-MDT0000.identity_upcall=NONE
 }
 
 create_oss() {
-	log "Create OSS"
+	log "Creating OSS node (Datanode)"
 
-	((index=$NODEINDEX*$NODETYPEDISKCOUNT))
+	devices_list=($(ls -1 /dev/sd* | egrep -v "/dev/sda|/dev/sdb" | egrep -v "[0-9]$"))
+	
+	((index=$node_index*$node_type_disk_count))
 
-	for device in "${DEVICES_LIST[@]}";
+	log "DEVICES=$${devices_list}"
+
+	for device in "$${devices_list[@]}";
 	do
-		log $device $index
-
-		mkfs.lustre --fsname=$FILESYSTEMNAME --ost --mgsnode=$MGSIP --index=$index --reformat $device
+		log "Setting up $device on $index"
+		mkfs.lustre \
+			--fsname=$file_system_name \
+			--backfstype=ldiskfs \
+			--reformat \
+			--ost \
+			--mgsnode=$mgs_ip \
+			--index=$index \
+			--mountfsoptions="errors=remount-ro" \
+			$device
 
 		uuid=$(blkid -o value -s UUID $device)
-		log "OSS UUID=$uuid"
+		log "Node UUID=$uuid"
+		label=$(blkid -c/dev/null -o value -s LABEL $device)	
+		log "Node label=$label"
 
-		label=$(blkid -c/dev/null -o value -s LABEL $device)
-		log "OSS LABEL=$label"
-
-		dumpe2fs -h $device | logger
-
-		# Create mount directory
-		mount_point=/mnt/targets/$label
+		mount_point="/mnt/oss/$label"
 		mkdir -p $mount_point
-		log "Created mount point directory $mount_point"
 
-		# Mount the current device
-		mount -t lustre $device $mount_point
+		# Add to /etc/fstab so that mount persists across reboots	
+		add_to_fstab "UUID=$uuid" $mount_point			
 
-		# Add to /etc/fstab so that mount persists across reboots
-		device_by_uuid="UUID=$uuid"
-		add_to_fstab $device_by_uuid $mount_point
-
+		log "Mounted $device as $mount_point"
 		((index=index+1))
 	done
-
-	# Random sleep to minimize chance of mount error
-	sleep $[ ( $RANDOM % 20 ) + 1]s
-
-	# Mount everything based on what is defined in the /etc/fstab
 	retry 5 mount -a
 }
 
-if [ "$NODETYPE" == "MGS" ]; then
-	create_mgs
+install_lustre() {
+	## Add repositories for Lustre
+
+	lustre_version=${lustre_version}
+
+	if [ "$lustre_version" = "2.10" -o "$lustre_version" = "2.12" ]; then
+		lustre_dir=latest-$${lustre_version}-release
+	else
+		lustre_dir="lustre-$lustre_version"
+	fi
+
+	cat << EOF >/etc/yum.repos.d/LustrePack.repo
+[lustreserver]
+name=lustreserver
+baseurl=https://downloads.whamcloud.com/public/lustre/$${lustre_dir}/el7/patchless-ldiskfs-server/
+enabled=1
+gpgcheck=0
+[e2fs]
+name=e2fs
+baseurl=https://downloads.whamcloud.com/public/e2fsprogs/latest/el7/
+enabled=1
+gpgcheck=0
+[lustreclient]
+name=lustreclient
+baseurl=https://downloads.whamcloud.com/public/lustre/$${lustre_dir}/el7/client/
+enabled=1
+gpgcheck=0
+EOF
+
+	## Install Lustre packages
+
+	yum -y install lustre kmod-lustre-osd-ldiskfs lustre-osd-ldiskfs-mount lustre-resource-agents e2fsprogs lustre-tests || exit 1
+
+	sed -i 's/ResourceDisk\.Format=y/ResourceDisk.Format=n/g' /etc/waagent.conf
+	systemctl restart waagent
+
+	log "Running weak-modules, this takes a bit ..."
+	weak-modules --add-kernel --no-initramfs
+
+	if [ -f "/etc/systemd/system/temp-disk-swapfile.service" ]; then
+		systemctl stop temp-disk-swapfile.service
+	fi
+
+	umount /mnt/resource
+}
+
+## Bootstrap nodes
+
+install_lustre
+
+if [ "$node_type" == "HEAD" ]; then
+	create_mgs_mdt
 fi
 
-if [ "$NODETYPE" == "MDS" ]; then
-	create_mds
-fi
-
-if [ "$NODETYPE" == "OSS" ]; then
+if [ "$node_type" == "OSS" ]; then
+	sleep 3m
 	create_oss
 fi
