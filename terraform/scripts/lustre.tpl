@@ -106,8 +106,6 @@ create_oss() {
 	
 	((index=$node_index*$node_type_disk_count))
 
-	log "DEVICES=$${devices_list}"
-
 	for device in "$${devices_list[@]}";
 	do
 		log "Setting up $device on $index"
@@ -138,6 +136,65 @@ create_oss() {
 	retry 5 mount -a
 }
 
+create_mdadm_oss() {
+	log "Creating OSS node (Datanode) using mdadm"
+
+	devices_list=($(ls -1 /dev/sd* | egrep -v "/dev/sda|/dev/sdb" | egrep -v "[0-9]$"))
+	device="/dev/md10"
+	
+	for disk in "$${devices_list[@]}";
+	do
+		echo "partitioning $disk"
+		parted -s $disk "mklabel gpt"
+		parted -s $disk -a optimal "mkpart primary 1 -1"
+		parted -s $disk print
+		parted -s $disk "set 1 raid on"
+	done
+
+	# make sure all the partitions are ready
+	sleep 5
+	# get the partition names
+	partitions=
+	for disk in $${devices_list[@]}; do
+		partitions="$partitions $(lsblk -no kname -p $disk | tail -n1)"
+	done
+	echo "Partitions=$partitions"
+
+	ndevices=$(echo $partitions | wc -w)
+
+	echo "Creating raid device"
+	mdadm --create $device --level 0 --raid-devices $ndevices $partitions || exit 1
+	sleep 5
+
+	mdadm --verbose --detail --scan > /etc/mdadm.conf
+
+	log "Setting up $device on $node_index"
+				
+	mkfs.lustre \
+		--fsname=$file_system_name \
+		--backfstype=ldiskfs \
+		--reformat \
+		--ost \
+		--mgsnode=$mgs_ip \
+		--index=$node_index \
+		--mountfsoptions="errors=remount-ro" \
+		$device
+	
+	uuid=$(blkid -o value -s UUID $device)
+	log "Node UUID=$uuid"
+	label=$(blkid -c/dev/null -o value -s LABEL $device)	
+	log "Node label=$label"
+
+	mount_point="/mnt/oss/$label"
+	mkdir -p $mount_point
+
+	# Add to /etc/fstab so that mount persists across reboots	
+	add_to_fstab $device $mount_point
+
+	retry 5 mount -a
+	log "Mounted $device as $mount_point"
+}
+
 install_lustre() {
 	## Add repositories for Lustre
 
@@ -152,7 +209,7 @@ install_lustre() {
 	cat << EOF >/etc/yum.repos.d/LustrePack.repo
 [lustreserver]
 name=lustreserver
-baseurl=https://downloads.whamcloud.com/public/lustre/$${lustre_dir}/el7/patchless-ldiskfs-server/
+baseurl=https://downloads.whamcloud.com/public/lustre/${lustre_dir}/el7/patchless-ldiskfs-server/
 enabled=1
 gpgcheck=0
 [e2fs]
@@ -162,7 +219,7 @@ enabled=1
 gpgcheck=0
 [lustreclient]
 name=lustreclient
-baseurl=https://downloads.whamcloud.com/public/lustre/$${lustre_dir}/el7/client/
+baseurl=https://downloads.whamcloud.com/public/lustre/${lustre_dir}/el7/client/
 enabled=1
 gpgcheck=0
 EOF
@@ -194,5 +251,5 @@ fi
 
 if [ "$node_type" == "OSS" ]; then
 	sleep 3m
-	create_oss
+	create_mdadm_oss
 fi
