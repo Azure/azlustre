@@ -44,77 +44,7 @@ resource "azurerm_subnet" "client" {
   address_prefixes     = ["10.10.4.0/23"]
 }
 
-# ## Section for MDS
-
-# resource "azurerm_network_interface" "mds" {
-#   name                = "lustre-mds-1-nic"
-#   location            = azurerm_resource_group.lustre.location
-#   resource_group_name = azurerm_resource_group.lustre.name
-
-#   ip_configuration {
-#     name                          = "ipconfig-mds-1-nic"
-#     subnet_id                     = azurerm_subnet.client.id
-#     private_ip_address_allocation = "Dynamic"
-#   }
-# }
-
-# resource "azurerm_linux_virtual_machine" "mds" {
-#   name                  = "lustre-mds-1"
-#   location              = azurerm_resource_group.lustre.location
-#   resource_group_name   = azurerm_resource_group.lustre.name
-#   network_interface_ids = [ azurerm_network_interface.mds.id ]
-#   size                  = "Standard_D16s_v3"
-
-#   os_disk {
-#     name                 = "lustre-mds-1-os"
-#     caching              = "ReadWrite"
-#     storage_account_type = "Premium_LRS"
-#   }
-
-#   source_image_reference {
-#     publisher = "OpenLogic"
-#     offer     = "CentOS"
-#     sku       = "7_9"
-#     version   = "latest"
-#   }
-
-#   computer_name  = "lustre-mds-1"
-#   admin_username = "lustre"
-#   disable_password_authentication = true
-#   custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "MDS", index = 0, diskcount = 1, mgs_ip=azurerm_network_interface.mgs.private_ip_address, fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
-
-#   admin_ssh_key {
-#     username   = "lustre"
-#     public_key = file("~/.ssh/id_rsa.pub")
-#   }
-
-#   boot_diagnostics {
-#     storage_account_uri = azurerm_storage_account.stor.primary_blob_endpoint
-#   }
-
-#   depends_on = [ 
-#     azurerm_network_interface.mgs,
-#     azurerm_linux_virtual_machine.mgs
-#   ]
-# }
-
-# resource "azurerm_managed_disk" "mds" {
-#   name                 = "lustre-mds-1-data"
-#   location             = azurerm_resource_group.lustre.location
-#   create_option        = "Empty"
-#   disk_size_gb         = 32
-#   resource_group_name  = azurerm_resource_group.lustre.name
-#   storage_account_type = "Standard_LRS"
-# }
-
-# resource "azurerm_virtual_machine_data_disk_attachment" "mds" {
-#   virtual_machine_id = azurerm_linux_virtual_machine.mds.id
-#   managed_disk_id    = azurerm_managed_disk.mds.id
-#   lun                = 0
-#   caching            = "None"
-# }
-
-# ## Section for MGS
+## Section for MGS
 
 resource "azurerm_network_interface" "mgs" {
   name                = "lustre-mgs-1-nic"
@@ -134,7 +64,7 @@ resource "azurerm_managed_disk" "mgs" {
   create_option        = "Empty"
   disk_size_gb         = 32
   resource_group_name  = azurerm_resource_group.lustre.name
-  storage_account_type = "Standard_LRS"
+  storage_account_type = "Premium_LRS"
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "mgs" {
@@ -149,7 +79,7 @@ resource "azurerm_linux_virtual_machine" "mgs" {
   location              = azurerm_resource_group.lustre.location
   resource_group_name   = azurerm_resource_group.lustre.name
   network_interface_ids = [ azurerm_network_interface.mgs.id ]
-  size                  = "Standard_D16s_v3"
+  size                  = "Standard_D8s_v3"
 
   os_disk {
     name                 = "lustre-mgs-1-os"
@@ -185,7 +115,7 @@ resource "azurerm_network_interface" "oss" {
   name                = "lustre-oss-nic${count.index}"
   location            = azurerm_resource_group.lustre.location
   resource_group_name = azurerm_resource_group.lustre.name
-  count               = var.oss-nodes
+  count               = var.oss-nodes.total
 
   ip_configuration {
     name                          = "ipconfig-oss-nic-${count.index}"
@@ -195,12 +125,12 @@ resource "azurerm_network_interface" "oss" {
 }
 
 resource "azurerm_linux_virtual_machine" "oss" {
-  count                 = var.oss-nodes
+  count                 = var.oss-nodes.total
   name                  = "lustre-oss-${count.index}"
   location              = azurerm_resource_group.lustre.location
   resource_group_name   = azurerm_resource_group.lustre.name
   network_interface_ids = [element(azurerm_network_interface.oss.*.id, count.index)]
-  size                  = "Standard_D32s_v3"
+  size                  = var.oss-nodes.sku
 
   os_disk {
     name                 = "lustre-oss-${count.index}-os"
@@ -218,7 +148,7 @@ resource "azurerm_linux_virtual_machine" "oss" {
   computer_name  = "lustre-oss-${count.index}"
   admin_username = "lustre"
   disable_password_authentication = true
-  custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "OSS", index = count.index, diskcount = var.oss-nodes-disks, mgs_ip=azurerm_network_interface.mgs.private_ip_address, fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
+  custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "OSS", index = count.index, diskcount = var.oss-nodes-disks.total, mgs_ip=azurerm_network_interface.mgs.private_ip_address, fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
   
   admin_ssh_key {
     username   = "lustre"
@@ -238,7 +168,7 @@ resource "azurerm_linux_virtual_machine" "oss" {
 # Make map
 
 locals {
-  vm_datadiskdisk_count_map = { for k in range(0, var.oss-nodes)  : k => var.oss-nodes-disks }
+  vm_datadiskdisk_count_map = { for k in range(0, var.oss-nodes.total)  : k => var.oss-nodes-disks.total }
   luns                      = { for k in local.datadisk_lun_map : k.datadisk_name => k.lun }
   datadisk_lun_map = flatten([
     for vm_name, count in local.vm_datadiskdisk_count_map : [
@@ -256,9 +186,10 @@ resource "azurerm_managed_disk" "managed_disk" {
   name                 = each.key
   location             = azurerm_resource_group.lustre.location
   resource_group_name  = azurerm_resource_group.lustre.name
-  storage_account_type = "Standard_LRS"
+  storage_account_type = var.oss-nodes-disks.sku
   create_option        = "Empty"
-  disk_size_gb         = 1024
+  disk_size_gb         = var.oss-nodes-disks.size
+
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "managed_disk_attach" {
@@ -323,9 +254,4 @@ resource "azurerm_linux_virtual_machine" "jump" {
   boot_diagnostics {
     storage_account_uri = azurerm_storage_account.stor.primary_blob_endpoint
   }
-}
-
-output "jump_ip_addr" {
-  value = azurerm_public_ip.jump.ip_address
-  description = "Public IP for the jump server, use SSH key to login"
 }

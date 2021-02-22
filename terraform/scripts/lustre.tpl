@@ -195,7 +195,7 @@ create_mdadm_oss() {
 	log "Mounted $device as $mount_point"
 }
 
-install_lustre() {
+setup_lustre_repositories() {
 	## Add repositories for Lustre
 
 	lustre_version=${lustre_version}
@@ -209,7 +209,7 @@ install_lustre() {
 	cat << EOF >/etc/yum.repos.d/LustrePack.repo
 [lustreserver]
 name=lustreserver
-baseurl=https://downloads.whamcloud.com/public/lustre/${lustre_dir}/el7/patchless-ldiskfs-server/
+baseurl=https://downloads.whamcloud.com/public/lustre/$${lustre_dir}/el7/patchless-ldiskfs-server/
 enabled=1
 gpgcheck=0
 [e2fs]
@@ -219,10 +219,14 @@ enabled=1
 gpgcheck=0
 [lustreclient]
 name=lustreclient
-baseurl=https://downloads.whamcloud.com/public/lustre/${lustre_dir}/el7/client/
+baseurl=https://downloads.whamcloud.com/public/lustre/$${lustre_dir}/el7/client/
 enabled=1
 gpgcheck=0
 EOF
+
+}
+
+install_lustre_cluster() {
 
 	## Install Lustre packages
 
@@ -241,15 +245,35 @@ EOF
 	umount /mnt/resource
 }
 
+install_lustre_client() {
+
+	## Install Lustre packages
+
+	yum -y install lustre-client || exit 1
+	mkdir -m0777 /lustre
+	lustre_location="$${mgs_ip}@tcp:/$${file_system_name}"
+
+	mount -t lustre $lustre_location /lustre
+}
+
+
 ## Bootstrap nodes
 
-install_lustre
+setup_lustre_repositories
+
+if [ "$node_type" == "CLIENT"]; then
+	install_lustre_client
+fi
 
 if [ "$node_type" == "HEAD" ]; then
+	install_lustre_cluster
 	create_mgs_mdt
 fi
 
 if [ "$node_type" == "OSS" ]; then
-	sleep 3m
+	# Short sleep to make sure all disks are attached before we run madm
+	# TODO: Make this just a wait for $count of disks to appear
+	sleep 5m
+	install_lustre_cluster
 	create_mdadm_oss
 fi
