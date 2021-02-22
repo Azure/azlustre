@@ -261,7 +261,7 @@ install_lustre_client() {
 
 setup_lustre_repositories
 
-if [ "$node_type" == "CLIENT"]; then
+if [ "$node_type" == "CLIENT" ]; then
 	install_lustre_client
 fi
 
