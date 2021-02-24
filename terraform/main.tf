@@ -245,7 +245,8 @@ resource "azurerm_linux_virtual_machine" "jump" {
   computer_name  = "lustre-jump-server"
   admin_username = "lustre"
   disable_password_authentication = true
-
+  custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "CLIENT", index = 0, diskcount = 0, mgs_ip=azurerm_network_interface.mgs.private_ip_address, fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
+  
   admin_ssh_key {
     username   = "lustre"
     public_key = file("~/.ssh/id_rsa.pub")
@@ -254,4 +255,9 @@ resource "azurerm_linux_virtual_machine" "jump" {
   boot_diagnostics {
     storage_account_uri = azurerm_storage_account.stor.primary_blob_endpoint
   }
+
+  depends_on = [ 
+    azurerm_network_interface.mgs,
+    azurerm_linux_virtual_machine.mgs
+  ]
 }

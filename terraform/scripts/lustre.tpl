@@ -253,7 +253,8 @@ install_lustre_client() {
 	mkdir -m0777 /lustre
 	lustre_location="$${mgs_ip}@tcp:/$${file_system_name}"
 
-	mount -t lustre $lustre_location /lustre
+	# We may need some time for lustre to come up
+	retry 10 mount -t lustre $lustre_location /lustre
 }
 
 
