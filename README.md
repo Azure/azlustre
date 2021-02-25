@@ -8,6 +8,7 @@ This project includes the following:
 
 * A [packer](https://www.packer.io/) script to build an image with the Lustre packages installed.
 * An [ARM template](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/) to deploy a Lustre cluster using the image.
+* A [Terraform template](terraform/README.md) to deploy a Lustre cluster automatically based on a marketplace image.
 
 The ARM template performs the installation with [cloud init](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/using-cloud-init) where the installation scripts are embedded.  The `azuredeploy.json` includes the embedded scripts but the repo includes script to create this from the `azuredeploy_template.json`.
 
