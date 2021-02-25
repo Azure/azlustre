@@ -59,7 +59,7 @@ add_to_fstab() {
 
 # Parameters to be set through TF
 node_type=${type}
-node_index=$((${index}))
+node_index=${index}
 node_type_disk_count=${diskcount}
 mgs_ip=${mgs_ip}
 file_system_name=${fs_name}
