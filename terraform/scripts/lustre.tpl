@@ -90,10 +90,10 @@ create_mgs_mdt() {
 
 	log "Mounted $device as $mount_point"
 
-	# # set up hsm
-    # lctl set_param -P mdt.*-MDT0000.hsm_control=enabled
-    # lctl set_param -P mdt.*-MDT0000.hsm.default_archive_id=1
-    # lctl set_param mdt.*-MDT0000.hsm.max_requests=128
+	# Need to be able to set up HSM
+    	lctl set_param -P mdt.*-MDT0000.hsm_control=enabled
+    	lctl set_param -P mdt.*-MDT0000.hsm.default_archive_id=1
+    	lctl set_param mdt.*-MDT0000.hsm.max_requests=128
 
     # # allow any user and group ids to write
     # lctl set_param mdt.*-MDT0000.identity_upcall=NONE
