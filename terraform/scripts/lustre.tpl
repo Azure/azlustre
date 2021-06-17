@@ -63,6 +63,11 @@ node_index=${index}
 node_type_disk_count=${diskcount}
 mgs_ip=${mgs_ip}
 file_system_name=${fs_name}
+lustre_version=${lustre_version}
+lustre_location="$${mgs_ip}@tcp:/$${file_system_name}"
+storage_account="storageacc_name_only"
+storage_key="storagekey"
+storage_container="hsm"
 
 log "node_type=$node_type node_type_disk_count=$node_type_disk_count node_index=$node_index mgs_ip=$mgs_ip file_system_name=$file_system_name"
 
@@ -198,8 +203,6 @@ create_mdadm_oss() {
 setup_lustre_repositories() {
 	## Add repositories for Lustre
 
-	lustre_version=${lustre_version}
-
 	if [ "$lustre_version" = "2.10" -o "$lustre_version" = "2.12" ]; then
 		lustre_dir=latest-$${lustre_version}-release
 	else
@@ -251,12 +254,103 @@ install_lustre_client() {
 
 	yum -y install lustre-client || exit 1
 	mkdir -m0777 /lustre
-	lustre_location="$${mgs_ip}@tcp:/$${file_system_name}"
 
 	# We may need some time for lustre to come up
 	retry 10 mount -t lustre $lustre_location /lustre
 }
 
+install_hsm_agent() {
+	
+	ndots=$${lustre_version//[^.]} 
+	if [ "$${#ndots}" = "2" ]; then
+    	lustre_version=$${lustre_version%.*}
+	fi
+	if ! rpm -q lemur-azure-hsm-agent lemur-azure-data-movers; then
+		yum -y install \
+			https://azurehpc.azureedge.net/rpms/lemur-azure-hsm-agent-1.0.0-lustre_$${lustre_version}.x86_64.rpm \
+			https://azurehpc.azureedge.net/rpms/lemur-azure-data-movers-1.0.0-lustre_$${lustre_version}.x86_64.rpm
+	fi
+
+	mkdir -p /var/run/lhsmd
+	chmod 755 /var/run/lhsmd
+
+	mkdir -p /etc/lhsmd
+	chmod 755 /etc/lhsmd
+
+	cat <<EOF >/etc/lhsmd/agent
+# Lustre NID and filesystem name for the front end filesystem, the agent will mount this
+client_device="$lustre_location"
+
+enabled_plugins=["lhsm-plugin-posix", "lhsm-plugin-az"]
+
+# Directory to look for the plugins
+plugin_dir="/usr/libexec/lhsmd"
+
+handler_count=16
+
+snapshots {
+        enabled = false
+}
+EOF
+
+	chmod 600 /etc/lhsmd/agent
+
+	## Add local posix movers for debugging purposes
+
+	cat <<EOF >/etc/lhsmd/lhsm-plugin-posix
+num_threads = 16
+
+archive  "posix-local" {
+    id = 1              # Must be unique for this endpoint
+    root = "/data"      # Optional prefix
+}
+EOF
+
+	chmod 600 /etc/lhsmd/lhsm-plugin-posix
+	mkdir -m755 /data
+
+	## Add Azure mover
+
+	cat <<EOF >/etc/lhsmd/lhsm-plugin-az
+az_storage_account = "$storage_account"
+az_storage_key = "$storage_key"
+num_threads = 32
+#
+# One or more archive definition is required.
+#
+archive  "az-blob" {
+    id = 2                           # Must be unique to this endpoint
+    container = "$storage_container" # Container used for this archive
+    prefix = ""                      # Optional prefix
+    num_threads = 32
+}
+EOF
+
+	chmod 600 /etc/lhsmd/lhsm-plugin-az
+
+	## Set up LHSMD as a service
+
+	cat <<EOF >/etc/systemd/system/lhsmd.service
+[Unit]
+Description=The lhsmd server
+After=syslog.target network.target remote-fs.target nss-lookup.target
+[Service]
+Type=simple
+PIDFile=/run/lhsmd.pid
+ExecStartPre=/bin/mkdir -p /var/run/lhsmd
+ExecStart=/sbin/lhsmd -config /etc/lhsmd/agent
+Restart=always
+[Install]
+WantedBy=multi-user.target
+EOF
+
+	chmod 600 /etc/systemd/system/lhsmd.service
+
+	systemctl daemon-reload
+	systemctl enable lhsmd
+	systemctl start lhsmd
+
+}
 
 ## Bootstrap nodes
 
@@ -269,6 +363,11 @@ fi
 if [ "$node_type" == "HEAD" ]; then
 	install_lustre_cluster
 	create_mgs_mdt
+fi
+
+if [ "$node_type" == "HSM"]; then  
+	install_lustre_client
+	install_hsm_agent
 fi
 
 if [ "$node_type" == "OSS" ]; then
