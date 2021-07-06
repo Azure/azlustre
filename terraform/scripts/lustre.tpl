@@ -64,10 +64,12 @@ node_type_disk_count=${diskcount}
 mgs_ip=${mgs_ip}
 file_system_name=${fs_name}
 lustre_version=${lustre_version}
+storage_account=${hsm_account_name}
+storage_key=${hsm_account_key}
+storage_container=${hsm_account_container}
+
+# Internal variables
 lustre_location="$${mgs_ip}@tcp:/$${file_system_name}"
-storage_account="storageacc_name_only"
-storage_key="storagekey"
-storage_container="hsm"
 
 log "node_type=$node_type node_type_disk_count=$node_type_disk_count node_index=$node_index mgs_ip=$mgs_ip file_system_name=$file_system_name"
 
@@ -301,7 +303,7 @@ EOF
 num_threads = 16
 
 archive  "posix-local" {
-    id = 1              # Must be unique for this endpoint
+    id = 2              # Must be unique for this endpoint
     root = "/data"      # Optional prefix
 }
 EOF
@@ -319,7 +321,7 @@ num_threads = 32
 # One or more archive definition is required.
 #
 archive  "az-blob" {
-    id = 2                           # Must be unique to this endpoint
+    id = 1                           # Must be unique to this endpoint
     container = "$storage_container" # Container used for this archive
     prefix = ""                      # Optional prefix
     num_threads = 32
@@ -365,7 +367,7 @@ if [ "$node_type" == "HEAD" ]; then
 	create_mgs_mdt
 fi
 
-if [ "$node_type" == "HSM"]; then  
+if [ "$node_type" == "HSM" ]; then  
 	install_lustre_client
 	install_hsm_agent
 fi

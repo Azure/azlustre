@@ -3,11 +3,11 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "lustre" {
-  name = "azlustre"
+  name     = "azlustre"
   location = "northcentralus"
   tags = {
-      project = "lustre"
-      owner = "ronieuwe"
+    project = "lustre"
+    owner   = "ronieuwe"
   }
 }
 
@@ -23,7 +23,7 @@ resource "azurerm_storage_account" "lustrestorage" {
   account_replication_type = "LRS"
 }
 
-resource "azurerm_storage_container" "hsm" {
+resource "azurerm_storage_container" "lustrestorage" {
   name                  = "hsm"
   storage_account_name  = azurerm_storage_account.lustrestorage.name
   container_access_type = "private"
@@ -84,7 +84,7 @@ resource "azurerm_linux_virtual_machine" "mgs" {
   name                  = "lustre-mgs-1"
   location              = azurerm_resource_group.lustre.location
   resource_group_name   = azurerm_resource_group.lustre.name
-  network_interface_ids = [ azurerm_network_interface.mgs.id ]
+  network_interface_ids = [azurerm_network_interface.mgs.id]
   size                  = "Standard_D8s_v3"
 
   os_disk {
@@ -100,10 +100,20 @@ resource "azurerm_linux_virtual_machine" "mgs" {
     version   = "latest"
   }
 
-  computer_name  = "lustre-mgs-1"
-  admin_username = "lustre"
+  computer_name                   = "lustre-mgs-1"
+  admin_username                  = "lustre"
   disable_password_authentication = true
-  custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "HEAD", index = 0, diskcount = 1, mgs_ip="0.0.0.0", fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
+  custom_data = base64encode(templatefile("scripts/lustre.tpl", {
+    type                  = "HEAD",
+    index                 = 0,
+    diskcount             = 1,
+    mgs_ip                = "0.0.0.0",
+    fs_name               = var.lustre-filesystem-name,
+    lustre_version        = var.lustre-version,
+    hsm_account_name      = "",
+    hsm_account_key       = "",
+    hsm_account_container = ""
+  }))
 
   admin_ssh_key {
     username   = "lustre"
@@ -151,11 +161,21 @@ resource "azurerm_linux_virtual_machine" "oss" {
     version   = "latest"
   }
 
-  computer_name  = "lustre-oss-${count.index}"
-  admin_username = "lustre"
+  computer_name                   = "lustre-oss-${count.index}"
+  admin_username                  = "lustre"
   disable_password_authentication = true
-  custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "OSS", index = count.index, diskcount = var.oss-nodes-disks.total, mgs_ip=azurerm_network_interface.mgs.private_ip_address, fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
-  
+  custom_data = base64encode(templatefile("scripts/lustre.tpl", {
+    type                  = "OSS",
+    index                 = count.index,
+    diskcount             = var.oss-nodes-disks.total,
+    mgs_ip                = azurerm_network_interface.mgs.private_ip_address,
+    fs_name               = var.lustre-filesystem-name,
+    lustre_version        = var.lustre-version,
+    hsm_account_name      = "",
+    hsm_account_key       = "",
+    hsm_account_container = ""
+  }))
+
   admin_ssh_key {
     username   = "lustre"
     public_key = file("~/.ssh/id_rsa.pub")
@@ -165,7 +185,7 @@ resource "azurerm_linux_virtual_machine" "oss" {
     storage_account_uri = azurerm_storage_account.lustrestorage.primary_blob_endpoint
   }
 
-  depends_on = [ 
+  depends_on = [
     azurerm_network_interface.mgs,
     azurerm_linux_virtual_machine.mgs
   ]
@@ -174,7 +194,7 @@ resource "azurerm_linux_virtual_machine" "oss" {
 # Make map
 
 locals {
-  vm_datadiskdisk_count_map = { for k in range(0, var.oss-nodes.total)  : k => var.oss-nodes-disks.total }
+  vm_datadiskdisk_count_map = { for k in range(0, var.oss-nodes.total) : k => var.oss-nodes-disks.total }
   luns                      = { for k in local.datadisk_lun_map : k.datadisk_name => k.lun }
   datadisk_lun_map = flatten([
     for vm_name, count in local.vm_datadiskdisk_count_map : [
@@ -232,7 +252,7 @@ resource "azurerm_linux_virtual_machine" "jump" {
   name                  = "lustre-jump-server"
   location              = azurerm_resource_group.lustre.location
   resource_group_name   = azurerm_resource_group.lustre.name
-  network_interface_ids = [ azurerm_network_interface.jump.id ]
+  network_interface_ids = [azurerm_network_interface.jump.id]
   size                  = "Standard_D2s_v3"
 
   os_disk {
@@ -248,11 +268,21 @@ resource "azurerm_linux_virtual_machine" "jump" {
     version   = "latest"
   }
 
-  computer_name  = "lustre-jump-server"
-  admin_username = "lustre"
+  computer_name                   = "lustre-jump-server"
+  admin_username                  = "lustre"
   disable_password_authentication = true
-  custom_data = base64encode(templatefile("scripts/lustre.tpl", { type = "CLIENT", index = 0, diskcount = 0, mgs_ip=azurerm_network_interface.mgs.private_ip_address, fs_name = var.lustre-filesystem-name, lustre_version = var.lustre-version }))
-  
+  custom_data = base64encode(templatefile("scripts/lustre.tpl", {
+    type                  = "CLIENT",
+    index                 = 0,
+    diskcount             = 0,
+    mgs_ip                = azurerm_network_interface.mgs.private_ip_address,
+    fs_name               = var.lustre-filesystem-name,
+    lustre_version        = var.lustre-version,
+    hsm_account_name      = "",
+    hsm_account_key       = "",
+    hsm_account_container = ""
+  }))
+
   admin_ssh_key {
     username   = "lustre"
     public_key = file("~/.ssh/id_rsa.pub")
@@ -262,7 +292,79 @@ resource "azurerm_linux_virtual_machine" "jump" {
     storage_account_uri = azurerm_storage_account.lustrestorage.primary_blob_endpoint
   }
 
-  depends_on = [ 
+  depends_on = [
+    azurerm_network_interface.mgs,
+    azurerm_linux_virtual_machine.mgs
+  ]
+}
+
+## HSM Client server, if HSM is desired
+
+resource "azurerm_network_interface" "hsm" {
+  name                = "lustre-hsm-server-nic"
+  location            = azurerm_resource_group.lustre.location
+  resource_group_name = azurerm_resource_group.lustre.name
+
+  ip_configuration {
+    name                          = "ipconfig-hsm-server-nic"
+    subnet_id                     = azurerm_subnet.client.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.hsm.id
+  }
+}
+
+resource "azurerm_public_ip" "hsm" {
+  name                = "lustre-hsm-server-pip"
+  resource_group_name = azurerm_resource_group.lustre.name
+  location            = azurerm_resource_group.lustre.location
+  allocation_method   = "Dynamic"
+}
+
+resource "azurerm_linux_virtual_machine" "hsm" {
+  name                  = "lustre-hsm-server"
+  location              = azurerm_resource_group.lustre.location
+  resource_group_name   = azurerm_resource_group.lustre.name
+  network_interface_ids = [azurerm_network_interface.hsm.id]
+  size                  = "Standard_D2s_v3"
+
+  os_disk {
+    name                 = "lustre-hsm-server-os"
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+
+  source_image_reference {
+    publisher = "OpenLogic"
+    offer     = "CentOS"
+    sku       = "7_9"
+    version   = "latest"
+  }
+
+  computer_name                   = "lustre-hsm-server"
+  admin_username                  = "lustre"
+  disable_password_authentication = true
+  custom_data = base64encode(templatefile("scripts/lustre.tpl", {
+    type                  = "HSM",
+    index                 = 0,
+    diskcount             = 0,
+    mgs_ip                = azurerm_network_interface.mgs.private_ip_address,
+    fs_name               = var.lustre-filesystem-name,
+    lustre_version        = var.lustre-version,
+    hsm_account_name      = azurerm_storage_account.lustrestorage.name,
+    hsm_account_key       = azurerm_storage_account.lustrestorage.primary_access_key,
+    hsm_account_container = azurerm_storage_container.lustrestorage.name
+  }))
+
+  admin_ssh_key {
+    username   = "lustre"
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
+
+  boot_diagnostics {
+    storage_account_uri = azurerm_storage_account.lustrestorage.primary_blob_endpoint
+  }
+
+  depends_on = [
     azurerm_network_interface.mgs,
     azurerm_linux_virtual_machine.mgs,
     azurerm_storage_account.lustrestorage
