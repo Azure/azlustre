@@ -175,7 +175,15 @@
         "tagname": "[concat('LustreFS-', parameters('name'))]",
         "subnet": "[resourceId(parameters('existingVnetResourceGroupName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVnetName'), parameters('existingSubNetName'))]",
         "imageReference": {
-            "id": "[parameters('imageResourceId')]"
+            "publisher": "azhpc",
+            "offer": "azurehpc-lustre-preview",
+            "sku": "azurehpc-lustre-2_12",
+            "version": "latest"      
+        },
+        "imagePlan": {
+            "publisher": "azhpc",
+            "product": "azurehpc-lustre-preview",
+            "name": "azurehpc-lustre-2_12"
         },
         "ciScript": "",
         "copy": [
@@ -237,6 +245,7 @@
             "apiVersion": "2019-07-01",
             "name": "[parameters('name')]",
             "location": "[resourceGroup().location]",
+            "plan": "[variables('imagePlan')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-NetworkInterface'))]"
             ],
@@ -285,6 +294,7 @@
             "apiVersion": "2018-10-01",
             "name": "[concat(parameters('name'), '-vmss')]",
             "location": "[resourceGroup().location]",
+            "plan": "[variables('imagePlan')]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
             },
