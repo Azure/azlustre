@@ -3,169 +3,169 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "name": {
-            "type": "string",
             "maxLength": 20,
+            "type": "String",
             "metadata": {
                 "description": "The name for the Lustre filesystem."
             }
         },
         "mdsSku": {
             "defaultValue": "Standard_D8s_v3",
-            "type": "string",
-            "metadata": "The SKU for the MDS"
+            "type": "String",
+            "metadata": {
+                "description": "The SKU for the Lustre MDS."
+            }
         },
         "ossSku": {
             "defaultValue": "Standard_L8s_v2",
-            "type": "string",
+            "type": "String",
             "metadata": {
                 "description": "The VM type for the Lustre nodes."
             }
         },
         "instanceCount": {
             "maxValue": 300,
-            "type": "int",
+            "type": "Int",
             "metadata": {
                 "description": "Number of additional Lustre nodes."
             }
         },
         "rsaPublicKey": {
-            "type": "string",
+            "type": "String",
             "metadata": {
                 "description": "The RSA public key to access the nodes."
             }
         },
-        "imageResourceGroup": {
-            "type": "string",
+        "imageResourceId": {
+            "defaultValue": "azhpc:azurehpc-lustre:azurehpc-lustre-2_12:latest",
+            "type": "String",
             "metadata": {
-                "description": "Name of the the resource group containing the Lustre image"
-            }
-        },
-        "imageName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name of the Lustre image to use"
+                "description": "The resource ID for the image containing the Lustre image"
             }
         },
         "existingVnetResourceGroupName": {
-            "type": "string",
+            "type": "String",
             "metadata": {
                 "description": "Name of the resource group for the existing virtual network to deploy the scale set into."
             }
         },
         "existingVnetName": {
-            "type": "string",
+            "type": "String",
             "metadata": {
                 "description": "Name of the existing virtual network to deploy the scale set into."
             }
         },
         "existingSubnetName": {
-            "type": "string",
+            "type": "String",
             "metadata": {
                 "description": "Name of the existing subnet to deploy the scale set into."
             }
         },
         "storageAccount": {
-            "type": "string",
             "defaultValue": "",
+            "type": "String",
             "metadata": {
                 "description": "Optional. The storage account to use (leave blank to disable HSM)"
             }
         },
         "storageContainer": {
-            "type": "string",
             "defaultValue": "",
+            "type": "String",
             "metadata": {
                 "description": "The storage container to use for archive"
             }
         },
-        "storageKey": {
-            "type": "string",
+        "storageSas": {
             "defaultValue": "",
+            "type": "String",
             "metadata": {
-                "description": "The storage account key"
+                "description": "A SAS key for the storage account"
             }
         },
         "logAnalyticsAccount": {
-            "type": "string",
             "defaultValue": "",
+            "type": "String",
             "metadata": {
                 "description": "Optional. The log analytics account to use (leave blank to disable logging)"
             }
         },
         "logAnalyticsWorkspaceId": {
-            "type": "string",
             "defaultValue": "",
+            "type": "String",
             "metadata": {
                 "description": " The log analytics workspace id"
             }
         },
         "logAnalyticsKey": {
-            "type": "string",
             "defaultValue": "",
+            "type": "String",
             "metadata": {
                 "description": "The log analytics account key"
             }
         },
         "mdtStorageSku": {
-            "type": "string",
             "defaultValue": "Premium_LRS",
+            "type": "String",
             "metadata": {
                 "description": "The size of the MDT disks"
             }
         },
         "mdtCacheOption": {
-            "type": "string",
             "defaultValue": "ReadWrite",
+            "type": "String",
             "metadata": {
                 "description": "The size of the MDT disks"
             }
         },
         "mdtDiskSize": {
-            "type": "int",
             "defaultValue": 1024,
+            "type": "Int",
             "metadata": {
                 "description": "The size of the MDT disks"
             }
         },
         "mdtNumDisks": {
-            "type": "int",
             "defaultValue": 2,
+            "type": "Int",
             "metadata": {
                 "description": "The number of disks in the MDT RAID"
             }
         },
         "ostStorageSku": {
-            "type": "string",
             "defaultValue": "Premium_LRS",
+            "type": "String",
             "metadata": {
                 "description": "The size of the MDT disks"
             }
         },
         "ostCacheOption": {
-            "type": "string",
             "defaultValue": "None",
+            "type": "String",
             "metadata": {
                 "description": "The size of the MDT disks"
             }
         },
         "ostDiskSize": {
-            "type": "int",
             "defaultValue": 1024,
+            "type": "Int",
             "metadata": {
                 "description": "The size of the OSS disks"
             }
         },
         "ostNumDisks": {
-            "type": "int",
             "defaultValue": 6,
+            "type": "Int",
             "metadata": {
                 "description": "The number of disks on each OSS"
             }
         },
         "ossDiskSetup": {
-            "type": "string",
             "defaultValue": "raid",
-            "allowedValues": [ "raid", "separate" ],
+            "allowedValues": [
+                "raid",
+                "separate"
+            ],
+            "type": "String",
             "metadata": {
                 "description": "Create a single RAID or use multiple OSTs"
             }
@@ -175,7 +175,7 @@
         "tagname": "[concat('LustreFS-', parameters('name'))]",
         "subnet": "[resourceId(parameters('existingVnetResourceGroupName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVnetName'), parameters('existingSubNetName'))]",
         "imageReference": {
-            "id": "[resourceId(parameters('imageResourceGroup'), 'Microsoft.Compute/images', parameters('imageName'))]"
+            "id": "[parameters('imageResourceId')]"
         },
         "ciScript": "",
         "copy": [
@@ -207,11 +207,12 @@
             }
         ]
     },
+    "functions": [],
     "resources": [
         {
-            "name": "[concat(parameters('name'), '-NetworkInterface')]",
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "2018-08-01",
+            "name": "[concat(parameters('name'), '-NetworkInterface')]",
             "location": "[resourceGroup().location]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
@@ -232,9 +233,9 @@
             }
         },
         {
-            "name": "[parameters('name')]",
             "type": "Microsoft.Compute/virtualMachines",
-            "apiVersion": "2017-03-30",
+            "apiVersion": "2019-07-01",
+            "name": "[parameters('name')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-NetworkInterface'))]"
@@ -280,8 +281,10 @@
             }
         },
         {
-            "name": "[concat(parameters('name'), '-vmss')]",
             "type": "Microsoft.Compute/virtualMachineScaleSets",
+            "apiVersion": "2018-10-01",
+            "name": "[concat(parameters('name'), '-vmss')]",
+            "location": "[resourceGroup().location]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
             },
@@ -290,8 +293,6 @@
                 "tier": "Standard",
                 "capacity": "[parameters('instanceCount')]"
             },
-            "apiVersion": "2018-10-01",
-            "location": "[resourceGroup().location]",
             "properties": {
                 "overprovision": true,
                 "upgradePolicy": {
@@ -347,8 +348,5 @@
             }
         }
     ],
-    "outputs": {
-    },
-    "functions": [
-    ]
+    "outputs": {}
 }

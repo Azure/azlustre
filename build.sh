@@ -4,11 +4,12 @@
     azuredeploy.json \
     azuredeploy_template.json \
     ciScript \
-    packer/lustre-setup-scripts \
+    scripts \
     setup_lustre.sh \
     name \
+    instanceCount \
     storageAccount \
-    storageKey \
+    storageSas \
     storageContainer \
     logAnalyticsAccount \
     logAnalyticsWorkspaceId \

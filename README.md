@@ -48,14 +48,14 @@ These can be read by packer from a JSON file.  Use this template to create `opti
     "var_client_id": "",
     "var_client_secret": "",
     "var_resource_group": "",
-    "var_image": "lustre-7.8-lustre-2.13.5"
+    "var_image": "azurehpc-lustre-2.12.5"
 }
 ```
 
 Use the following command to build with packer:
 
 ```
-packer build -var-file=options.json centos-7.8-lustre-2.12.5.json
+packer build -var-file=options.json azurehpc-lustre-2.12.5.json
 ```
 
 Once this successfully completes the image will be available.
@@ -71,8 +71,7 @@ The "Deploy to Azure" button can be used once the image is available (alternativ
 | ossSku                        | The SKU for the OSS VMs                                                            |
 | instanceCount                 | The number of OSS VMs                                                              |
 | rsaPublicKey                  | The RSA public key to access the VMs                                               |
-| imageResourceGroup            | The name of the resource group containing the image                                |
-| imageName                     | The name of the Lustre image to use                                                |
+| imageResourceId               | The Lustre image resource ID                                                       |
 | existingVnetResourceGroupName | The resource group containing the VNET where Lustre is to be deployed              |
 | existingVnetName              | The name of the VNET where Lustre is to be deployed                                |
 | existingSubnetName            | The name of the subnet where Lustre is to be deployed                              |
@@ -90,11 +89,11 @@ The "Deploy to Azure" button can be used once the image is available (alternativ
 
 The additional parameters can be used to enable HSM for the Lustre deployment.
 
-| Parameter        | Description                        |
-|------------------|------------------------------------|
-| storageAccount   | The storage account to use for HSM |
-| storageContainer | The container name to use          |
-| storageKey       | The key for the storage account    |
+| Parameter        | Description                         |
+|------------------|-------------------------------------|
+| storageAccount   | The storage account to use for HSM  |
+| storageContainer | The container name to use           |
+| storageSas       | The SAS key for the storage account |
 
 #### Options for Logging with Log Analytics
 
