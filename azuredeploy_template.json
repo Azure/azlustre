@@ -36,13 +36,6 @@
                 "description": "The RSA public key to access the nodes."
             }
         },
-        "imageResourceId": {
-            "defaultValue": "azhpc:azurehpc-lustre:azurehpc-lustre-2_12:latest",
-            "type": "String",
-            "metadata": {
-                "description": "The resource ID for the image containing the Lustre image"
-            }
-        },
         "existingVnetResourceGroupName": {
             "type": "String",
             "metadata": {
