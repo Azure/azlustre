@@ -7,13 +7,25 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo "script_dir = $script_dir"
 
 mds="$1"
-storage_account="$2" 
-storage_key="$3"
-storage_container="$4"
-log_analytics_name="$5"
-log_analytics_workspace_id="$6"
-log_analytics_key="$7"
-oss_disk_setup="$8"
+n_oss="$2"
+storage_account="$3" 
+storage_sas="$4"
+storage_container="$5"
+log_analytics_name="$6"
+log_analytics_workspace_id="$7"
+log_analytics_key="$8"
+oss_disk_setup="$9"
+
+echo mds="$1"
+echo n_oss="$2"
+echo storage_account="$3" 
+echo storage_sas="${4/sig=*/sig=REDACTED}"
+echo storage_container="$5"
+echo log_analytics_name="$6"
+echo log_analytics_workspace_id="$7"
+echo log_analytics_key="$8"
+echo oss_disk_setup="$9"
+
 
 # vars used in script
 if [ -e /dev/nvme0n1 ]; then
@@ -53,19 +65,12 @@ fi
 
 echo "using $n_devices device(s) : $devices"
 
-
-# SETUP LUSTRE YUM REPO
-#$script_dir/lfsrepo.sh $lustre_version
-
-# INSTALL LUSTRE PACKAGES
-#$script_dir/lfspkgs.sh
-
 ost_index=1
 
 if [ "$HOSTNAME" = "$mds" ]; then
 
 	# SETUP MDS
-	$script_dir/lfsmaster.sh $devices
+	$script_dir/lfsmaster.sh $devices $n_oss
 
 else
 
@@ -99,13 +104,18 @@ fi
 
 if [ "${use_hsm,,}" = "true" ]; then
 
-	$script_dir/lfshsm.sh "$mds" "$storage_account" "$storage_key" "$storage_container" "$lustre_version"
-
 	if [ "$HOSTNAME" = "$mds" ]; then
 
-		# IMPORT CONTAINER
-		$script_dir/lfsclient.sh $mds /lustre
-		$script_dir/lfsimport.sh "$storage_account" "$storage_key" "$storage_container" /lustre "$lustre_version"
+		# IMPORT CONTAINER (so mount lustre on the mds to import)
+		mkdir /lustre
+		mount -t lustre ${mds}@tcp0:/LustreFS /lustre
+		chmod 777 /lustre
+
+		$script_dir/lfsimport.sh "$storage_account" "$storage_sas" "$storage_container" /lustre
+
+	else
+
+		$script_dir/lfshsm.sh "$mds" "$storage_account" "$storage_sas" "$storage_container"
 
 	fi
 

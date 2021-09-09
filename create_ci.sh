@@ -38,7 +38,7 @@ echo -n "set --'," >>${script_name}.str
 
 while test $# -gt 0
 do
-    echo -n "' ',parameters('$1')," >>${script_name}.str
+    echo -n "' \"',parameters('$1'),'\"'," >>${script_name}.str
     shift
 done
 echo "'" >>${script_name}.str
