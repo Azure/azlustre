@@ -169,13 +169,13 @@
         "subnet": "[resourceId(parameters('existingVnetResourceGroupName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVnetName'), parameters('existingSubNetName'))]",
         "imageReference": {
             "publisher": "azhpc",
-            "offer": "azurehpc-lustre-preview",
+            "offer": "azurehpc-lustre",
             "sku": "azurehpc-lustre-2_12",
             "version": "latest"      
         },
         "imagePlan": {
             "publisher": "azhpc",
-            "product": "azurehpc-lustre-preview",
+            "product": "azurehpc-lustre",
             "name": "azurehpc-lustre-2_12"
         },
         "ciScript": "",
