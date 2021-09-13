@@ -31,10 +31,17 @@
             }
         },
         "instanceCount": {
+            "minValue": 1,
             "maxValue": 300,
             "type": "Int",
             "metadata": {
                 "description": "Number of additional Lustre nodes."
+            }
+        },
+        "adminUser": {
+            "type": "String",
+            "metadata": {
+                "description": "The username for the Lustre filesystem."
             }
         },
         "rsaPublicKey": {
@@ -219,7 +226,7 @@
     "resources": [
         {
             "type": "Microsoft.Network/networkInterfaces",
-            "apiVersion": "2018-08-01",
+            "apiVersion": "2021-03-01",
             "name": "[concat(parameters('name'), '-NetworkInterface')]",
             "location": "[parameters('location')]",
             "tags": {
@@ -242,7 +249,7 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachines",
-            "apiVersion": "2019-07-01",
+            "apiVersion": "2021-07-01",
             "name": "[parameters('name')]",
             "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
@@ -258,14 +265,14 @@
                 },
                 "osProfile": {
                     "computerName": "[parameters('name')]",
-                    "adminUsername": "lustre",
+                    "adminUsername": "[parameters('adminUser')]",
                     "customData": "[base64(variables('ciScript'))]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": true,
                         "ssh": {
                             "publicKeys": [
                                 {
-                                    "path": "/home/lustre/.ssh/authorized_keys",
+                                    "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUser'))]",
                                     "keyData": "[parameters('rsaPublicKey')]"
                                 }
                             ]
@@ -291,7 +298,7 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachineScaleSets",
-            "apiVersion": "2018-10-01",
+            "apiVersion": "2021-07-01",
             "name": "[concat(parameters('name'), '-vmss')]",
             "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
@@ -326,7 +333,7 @@
                             "ssh": {
                                 "publicKeys": [
                                     {
-                                        "path": "/home/lustre/.ssh/authorized_keys",
+                                        "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUser'))]",
                                         "keyData": "[parameters('rsaPublicKey')]"
                                     }
                                 ]
