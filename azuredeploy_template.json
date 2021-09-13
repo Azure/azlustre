@@ -2,6 +2,13 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for the resources."
+            }
+        },
         "name": {
             "maxLength": 20,
             "type": "String",
@@ -214,7 +221,7 @@
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "2018-08-01",
             "name": "[concat(parameters('name'), '-NetworkInterface')]",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('location')]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
             },
@@ -237,7 +244,7 @@
             "type": "Microsoft.Compute/virtualMachines",
             "apiVersion": "2019-07-01",
             "name": "[parameters('name')]",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-NetworkInterface'))]"
@@ -286,7 +293,7 @@
             "type": "Microsoft.Compute/virtualMachineScaleSets",
             "apiVersion": "2018-10-01",
             "name": "[concat(parameters('name'), '-vmss')]",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
