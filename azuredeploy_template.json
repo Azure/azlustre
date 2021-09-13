@@ -326,7 +326,7 @@
                     },
                     "osProfile": {
                         "computerNamePrefix": "[parameters('name')]",
-                        "adminUsername": "lustre",
+                        "adminUsername": "[parameters('adminUser')]",
                         "customData": "[base64(variables('ciScript'))]",
                         "linuxConfiguration": {
                             "disablePasswordAuthentication": true,
