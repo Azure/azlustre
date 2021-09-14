@@ -409,7 +409,7 @@
 			"ostNumDisks": "[if(equals(steps('storage').ostStorageSku,'Ephemeral'),0,steps('storage').ostNumDisks)]",
 			"ostStorageSku": "[if(equals(steps('storage').ostStorageSku,'Ephemeral'),'Premium_LRS',steps('storage').ostStorageSku)]",
 			"rsaPublicKey": "[basics('credentials').sshPublicKey]",
-			"storageAccount": "[steps('hsm').storageAccount]",
+			"storageAccount": "[steps('hsm').storageAccount.name]",
 			"storageContainer": "[steps('hsm').storageContainer]",
 			"storageSas": "[steps('hsm').storageSas]"
         }
