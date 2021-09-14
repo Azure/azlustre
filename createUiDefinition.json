@@ -139,14 +139,14 @@
 						"multiLine": false,
 						"constraints": {
 							"allowedValues": [
-								{ "label": "256 GiB", "value": "256" },
-								{ "label": "512 GiB", "value": "512" },
-								{ "label": "1 TiB", "value": "1024" },
-								{ "label": "2 TiB", "value": "2048" },
-								{ "label": "4 TiB", "value": "4095" },
-								{ "label": "8 TiB", "value": "8192" },
-								{ "label": "16 TiB", "value": "16384" },
-								{ "label": "32 TiB", "value": "32767" }
+								{ "label": "256 GiB", "value": 256 },
+								{ "label": "512 GiB", "value": 512 },
+								{ "label": "1 TiB", "value": 1024 },
+								{ "label": "2 TiB", "value": 2048 },
+								{ "label": "4 TiB", "value": 4095 },
+								{ "label": "8 TiB", "value": 8192 },
+								{ "label": "16 TiB", "value": 16384 },
+								{ "label": "32 TiB", "value": 32767 }
 							],
 							"required": true
 						},
@@ -269,14 +269,14 @@
 						"multiLine": false,
 						"constraints": {
 							"allowedValues": [
-								{ "label": "256 GiB", "value": "256" },
-								{ "label": "512 GiB", "value": "512" },
-								{ "label": "1 TiB", "value": "1024" },
-								{ "label": "2 TiB", "value": "2048" },
-								{ "label": "4 TiB", "value": "4095" },
-								{ "label": "8 TiB", "value": "8192" },
-								{ "label": "16 TiB", "value": "16384" },
-								{ "label": "32 TiB", "value": "32767" }
+								{ "label": "256 GiB", "value": 256 },
+								{ "label": "512 GiB", "value": 512 },
+								{ "label": "1 TiB", "value": 1024 },
+								{ "label": "2 TiB", "value": 2048 },
+								{ "label": "4 TiB", "value": 4095 },
+								{ "label": "8 TiB", "value": 8192 },
+								{ "label": "16 TiB", "value": 16384 },
+								{ "label": "32 TiB", "value": 32767 }
 							],
 							"required": true
 						},
