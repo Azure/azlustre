@@ -90,7 +90,7 @@
                             "Standard_D8s_v3"
                         ],
                         "osPlatform": "Linux",
-                        "count": "1"
+                        "count": 1
                     },
 					{
 						"name": "mdtStorageSku",
@@ -219,7 +219,7 @@
                             "Standard_D48s_v3"
                         ],
                         "osPlatform": "Linux",
-                        "count": "1",
+                        "count": 1,
                         "visible": true
                     },
 					{
@@ -366,8 +366,8 @@
 					{
 						"name": "storageContainer",
 						"type": "Microsoft.Common.DropDown",
-						"label": "Available storage accounts (Arm API)",
-						"toolTip": "Select a storage account from the available list.",
+						"label": "Select storage container",
+						"toolTip": "Select a storage container from the available list.",
 						"constraints": {
 							"allowedValues": "[map(steps('hsm').armApiControl.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]"
 						},
