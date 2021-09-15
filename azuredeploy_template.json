@@ -2,6 +2,13 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for the resources."
+            }
+        },
         "name": {
             "maxLength": 20,
             "type": "String",
@@ -24,10 +31,17 @@
             }
         },
         "instanceCount": {
+            "minValue": 1,
             "maxValue": 300,
             "type": "Int",
             "metadata": {
                 "description": "Number of additional Lustre nodes."
+            }
+        },
+        "adminUser": {
+            "type": "String",
+            "metadata": {
+                "description": "The username for the Lustre filesystem."
             }
         },
         "rsaPublicKey": {
@@ -212,9 +226,9 @@
     "resources": [
         {
             "type": "Microsoft.Network/networkInterfaces",
-            "apiVersion": "2018-08-01",
+            "apiVersion": "2021-03-01",
             "name": "[concat(parameters('name'), '-NetworkInterface')]",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('location')]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
             },
@@ -235,9 +249,9 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachines",
-            "apiVersion": "2019-07-01",
+            "apiVersion": "2021-07-01",
             "name": "[parameters('name')]",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-NetworkInterface'))]"
@@ -251,14 +265,14 @@
                 },
                 "osProfile": {
                     "computerName": "[parameters('name')]",
-                    "adminUsername": "lustre",
+                    "adminUsername": "[parameters('adminUser')]",
                     "customData": "[base64(variables('ciScript'))]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": true,
                         "ssh": {
                             "publicKeys": [
                                 {
-                                    "path": "/home/lustre/.ssh/authorized_keys",
+                                    "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUser'))]",
                                     "keyData": "[parameters('rsaPublicKey')]"
                                 }
                             ]
@@ -284,9 +298,9 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachineScaleSets",
-            "apiVersion": "2018-10-01",
+            "apiVersion": "2021-07-01",
             "name": "[concat(parameters('name'), '-vmss')]",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
@@ -312,14 +326,14 @@
                     },
                     "osProfile": {
                         "computerNamePrefix": "[parameters('name')]",
-                        "adminUsername": "lustre",
+                        "adminUsername": "[parameters('adminUser')]",
                         "customData": "[base64(variables('ciScript'))]",
                         "linuxConfiguration": {
                             "disablePasswordAuthentication": true,
                             "ssh": {
                                 "publicKeys": [
                                     {
-                                        "path": "/home/lustre/.ssh/authorized_keys",
+                                        "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUser'))]",
                                         "keyData": "[parameters('rsaPublicKey')]"
                                     }
                                 ]

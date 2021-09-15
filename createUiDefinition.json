@@ -1,0 +1,417 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+    "handler": "Microsoft.Azure.CreateUIDef",
+    "version": "0.1.2-preview",
+    "parameters": {
+        "basics": [ 
+			{
+                "name": "fsName",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Virtual Machine name/prefix",
+                "toolTip": "The name MGS/MDS and the prefix for the OSS.",
+                "defaultValue": "lustre",
+                "constraints": {
+                    "required": true,
+                    "regex": "^[a-z0-9A-Z-]{3,32}$",
+                    "validationMessage": "The VM Name must be between 3 and 32 characters long and contain letters, numbers and hyphens only."
+                }
+            },
+            {
+                "name": "adminUser",
+                "type": "Microsoft.Compute.UserNameTextBox",
+                "label": "Username",
+                "toolTip": "Admin username for the VMs",
+				"defaultValue": "lustre",
+                "osPlatform": "Linux",
+                "constraints": {
+                    "required": true
+                }
+            },
+            {
+                "name": "credentials",
+                "type": "Microsoft.Compute.CredentialsCombo",
+                "label": {
+                    "authenticationType": "Authentication type",
+                    "sshPublicKey": "SSH public key"
+                },
+                "toolTip": {
+                    "authenticationType": "Authentication Type for the Virtual Machine",
+                    "password": "Password for the Virtual Machine",
+                    "sshPublicKey": "SSH Public Key for the Virtual Machine"
+                },
+                "constraints": {
+                    "required": true
+                },
+                "options": {
+                    "hideConfirmation": false,
+					"hidePassword": true
+                },
+                "osPlatform": "Linux"
+            }, {
+				"name": "vnet",
+				"type": "Microsoft.Network.VirtualNetworkCombo",
+				"label": {
+					"virtualNetwork": "Virtual Network",
+					"subnets": "Subnets"
+				},
+				"constraints": {
+					"minAddressPrefixSize": "/24"
+				},
+				"subnets": {
+					"subnet1": {
+                        "label": "Subnet",
+                        "constraints": {
+                            "minAddressPrefixSize": "/29",
+                            "minAddressCount": 8,
+                            "requireContiguousAddresses": true
+                        }
+					}
+				}
+			}
+		],
+        "steps": [
+            {
+                "name": "metadata",
+                "label": "Metadata",                
+                "subLabel": {
+                    "preValidation": "Configure your metadata settings",
+                    "postValidation": "Done"
+                },
+                "bladeTitle": "Metadata Settings",
+                "elements": [
+                    {
+                        "name": "mdsSku",
+                        "type": "Microsoft.Compute.SizeSelector",
+                        "label": "Management/Metadata server size",
+                        "toolTip": "The size of virtual machine to provision.",
+                        "defaultValue": "Standard_D8s_v3",
+                        "recommendedSizes": [
+                            "Standard_L8s_v2",
+                            "Standard_D8s_v3"
+                        ],
+                        "osPlatform": "Linux",
+                        "count": 1
+                    },
+					{
+						"name": "mdtStorageSku",
+						"type": "Microsoft.Common.DropDown",
+						"label": "The OST storage type",
+						"placeholder": "",
+						"defaultValue": "Premium_LRS",
+						"toolTip": "",
+						"multiselect": false,
+						"multiLine": false,
+						"constraints": {
+							"allowedValues": [
+								{
+									"label": "Ephemeral",
+									"description": "Ephemeral storage on the Virtual Machine.",
+									"value": "Ephemeral"
+								},
+								{
+									"label": "Premium_LRS",
+									"description": "Premium Locally Redundant Storage.",
+									"value": "Premium_LRS"
+								},
+								{
+									"label": "StandardSSD_LRS",
+									"description": "Standard SSD Locally Redundant Storage.",
+									"value": "StandardSSD_LRS"
+								},
+								{
+									"label": "Standard_LRS",
+									"description": "Standard Locally Redundant Storage.",
+									"value": "Standard_LRS"
+								}
+							],
+							"required": true
+						},
+						"visible": true
+					},
+					{
+						"name": "mdtDiskSize",
+						"type": "Microsoft.Common.DropDown",
+						"label": "Managed disk size for MDT",
+						"placeholder": "",
+						"defaultValue": "1 TiB",
+						"toolTip": "",
+						"multiselect": false,
+						"multiLine": false,
+						"constraints": {
+							"allowedValues": [
+								{ "label": "256 GiB", "value": 256 },
+								{ "label": "512 GiB", "value": 512 },
+								{ "label": "1 TiB", "value": 1024 },
+								{ "label": "2 TiB", "value": 2048 },
+								{ "label": "4 TiB", "value": 4095 },
+								{ "label": "8 TiB", "value": 8192 },
+								{ "label": "16 TiB", "value": 16384 },
+								{ "label": "32 TiB", "value": 32767 }
+							],
+							"required": true
+						},
+						"visible": "[not(equals(steps('metadata').mdtStorageSku, 'Ephemeral'))]"
+					},
+					{
+						"name": "mdtNumDisks",
+						"type": "Microsoft.Common.Slider",
+						"label": "The number of disks raided for the MDT",
+						"min": 1,
+                        "max": 16,
+						"defaultValue": 1,
+						"toolTip": "",
+						"constraints": {
+							"required": true
+						},
+						"visible": "[not(equals(steps('metadata').mdtStorageSku, 'Ephemeral'))]"
+					},
+                    {
+                        "name": "mdtCacheOption",
+                        "type": "Microsoft.Common.DropDown",
+                        "label": "Cache option for OST devices",
+                        "placeholder": "",
+                        "defaultValue": "None",
+                        "toolTip": "",
+						"multiselect": false,
+						"multiLine": false,
+						"constraints": {
+							"allowedValues": [
+								{ "label": "None", "value": "None" },
+								{ "label": "ReadOnly", "value": "ReadOnly" },
+								{ "label": "ReadWrite", "value": "ReadWrite" }
+							],
+							"required": true
+						},
+						"visible": "[not(equals(steps('metadata').mdtStorageSku, 'Ephemeral'))]"
+                    }
+                ]
+            },
+            {
+                "name": "storage",
+                "label": "Storage",
+                "subLabel": {
+                    "preValidation": "Configure your storage settings",
+                    "postValidation": "Done"
+                },
+                "bladeTitle": "Storage Settings",
+                "elements": [
+                    {
+						"name": "ossCount",
+						"type": "Microsoft.Common.Slider",
+						"label": "Number of OSS VMs",
+						"min": 1,
+                        "max": 300,
+						"defaultValue": 4,
+						"toolTip": "",
+						"constraints": {
+							"required": true
+						},
+						"visible": true
+					},
+					{
+                        "name": "ossSku",
+                        "type": "Microsoft.Compute.SizeSelector",
+                        "label": "Object storage server size",
+                        "toolTip": "The size of virtual machine to provision.",
+                        "defaultValue": "Standard_D48s_v3",
+                        "recommendedSizes": [
+                            "Standard_L48s_v2",
+                            "Standard_D48s_v3"
+                        ],
+                        "osPlatform": "Linux",
+                        "count": 1,
+                        "visible": true
+                    },
+					{
+						"name": "ostStorageSku",
+						"type": "Microsoft.Common.DropDown",
+						"label": "The OST storage type",
+						"placeholder": "",
+						"defaultValue": "Premium_LRS",
+						"toolTip": "",
+						"multiselect": false,
+						"multiLine": false,
+						"constraints": {
+							"allowedValues": [
+								{
+									"label": "Ephemeral",
+									"description": "Ephemeral storage on the Virtual Machine.",
+									"value": "Ephemeral"
+								},
+								{
+									"label": "Premium_LRS",
+									"description": "Premium Locally Redundant Storage.",
+									"value": "Premium_LRS"
+								},
+								{
+									"label": "StandardSSD_LRS",
+									"description": "Standard SSD Locally Redundant Storage.",
+									"value": "StandardSSD_LRS"
+								},
+								{
+									"label": "Standard_LRS",
+									"description": "Standard Locally Redundant Storage.",
+									"value": "Standard_LRS"
+								}
+							],
+							"required": true
+						},
+						"visible": true
+					},
+					{
+						"name": "ostDiskSize",
+						"type": "Microsoft.Common.DropDown",
+						"label": "Managed disk size for OST",
+						"placeholder": "",
+						"defaultValue": "1 TiB",
+						"toolTip": "",
+						"multiselect": false,
+						"multiLine": false,
+						"constraints": {
+							"allowedValues": [
+								{ "label": "256 GiB", "value": 256 },
+								{ "label": "512 GiB", "value": 512 },
+								{ "label": "1 TiB", "value": 1024 },
+								{ "label": "2 TiB", "value": 2048 },
+								{ "label": "4 TiB", "value": 4095 },
+								{ "label": "8 TiB", "value": 8192 },
+								{ "label": "16 TiB", "value": 16384 },
+								{ "label": "32 TiB", "value": 32767 }
+							],
+							"required": true
+						},
+						"visible": "[not(equals(steps('storage').ostStorageSku, 'Ephemeral'))]"
+					},
+					{
+						"name": "ostNumDisks",
+						"type": "Microsoft.Common.Slider",
+						"label": "Number of OST disks",
+						"min": 1,
+                        "max": 32,
+						"defaultValue": 6,
+						"toolTip": "",
+						"constraints": {
+							"required": true
+						},
+						"visible": "[not(equals(steps('storage').ostStorageSku, 'Ephemeral'))]"
+					},
+                    {
+                        "name": "ostCacheOption",
+                        "type": "Microsoft.Common.DropDown",
+                        "label": "Cache option for OST devices",
+                        "placeholder": "",
+                        "defaultValue": "None",
+                        "toolTip": "",
+						"multiselect": false,
+						"multiLine": false,
+						"constraints": {
+							"allowedValues": [
+								{ "label": "None", "value": "None" },
+								{ "label": "ReadOnly", "value": "ReadOnly" },
+								{ "label": "ReadWrite", "value": "ReadWrite" }
+							],
+							"required": true
+						},
+						"visible": "[not(equals(steps('storage').ostStorageSku, 'Ephemeral'))]"
+                    },
+                    {
+                        "name": "ossDiskSetup",
+                        "type": "Microsoft.Common.DropDown",
+                        "label": "OSS Disk Setup",
+                        "placeholder": "",
+                        "defaultValue": "RAID",
+                        "toolTip": "Multiple separate OSTs or a single RAIDed OST",
+						"multiselect": false,
+						"multiLine": false,
+						"constraints": {
+							"allowedValues": [
+								{ "label": "RAID", "value": "raid" },
+								{ "label": "Separate", "value": "separate" }
+							],
+							"required": true
+						},
+						"visible": true
+                    }
+                ]
+            },
+			{
+                "name": "hsm",
+                "label": "Object Storage (HSM)",
+                "subLabel": {
+                    "preValidation": "Configure your BLOB storage settings",
+                    "postValidation": "Done"
+                },
+                "bladeTitle": "Object Storage (HSM)",
+                "elements": [
+					{
+						"name": "storageAccount",
+						"type": "Microsoft.Solutions.ResourceSelector",
+						"label": "Select storage accounts",
+						"resourceType": "Microsoft.Storage/storageAccounts",
+						"options": {
+							"filter": {
+								"subscription": "onBasics",
+								"location": "onBasics"
+							}
+						}
+					},
+					{
+						"name": "armApiControl",
+						"type": "Microsoft.Solutions.ArmApiControl",
+						"request": {
+							"method": "GET",
+							"path": "[concat(steps('hsm').storageAccount.id, '/blobServices/default/containers?api-version=2021-04-01')]"
+						}
+					},
+					{
+						"name": "storageContainer",
+						"type": "Microsoft.Common.DropDown",
+						"label": "Select storage container",
+						"toolTip": "Select a storage container from the available list.",
+						"constraints": {
+							"allowedValues": "[map(steps('hsm').armApiControl.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]"
+						},
+						"visible": true
+					},
+					{
+						"name": "storageSas",
+						"type": "Microsoft.Common.TextBox",
+						"label": "Storage SAS Key",
+						"defaultValue": "",
+						"placeholder": "",
+						"toolTip": "The SAS key for the account/container",
+						"multiLine": false,
+						"visible": true
+					}
+                ]
+            }
+        ],
+        "outputs": {
+			"adminUser": "[basics('adminUser')]",
+			"existingSubnetName": "[basics('vnet').subnets.subnet1.name]",
+			"existingVnetName": "[basics('vnet').name]",
+			"existingVnetResourceGroupName": "[basics('vnet').resourceGroup]",
+			"instanceCount": "[steps('storage').ossCount]",
+			"location": "[location()]",
+			"logAnalyticsAccount": "",
+			"logAnalyticsKey": "",
+			"logAnalyticsWorkspaceId": "",
+			"mdsSku": "[steps('metadata').mdsSku]",
+			"mdtCacheOption": "[steps('metadata').mdtCacheOption]",
+			"mdtDiskSize": "[steps('metadata').mdtDiskSize]",
+			"mdtNumDisks": "[if(equals(steps('metadata').mdtStorageSku,'Ephemeral'),0,steps('metadata').mdtNumDisks)]",
+			"mdtStorageSku": "[if(equals(steps('metadata').mdtStorageSku,'Ephemeral'),'Premium_LRS',steps('metadata').mdtStorageSku)]",
+			"name": "[basics('fsName')]",
+			"ossDiskSetup": "[steps('storage').ossDiskSetup]",
+			"ossSku": "[steps('storage').ossSku]",
+			"ostCacheOption": "[steps('storage').ostCacheOption]",
+			"ostDiskSize": "[steps('storage').ostDiskSize]",
+			"ostNumDisks": "[if(equals(steps('storage').ostStorageSku,'Ephemeral'),0,steps('storage').ostNumDisks)]",
+			"ostStorageSku": "[if(equals(steps('storage').ostStorageSku,'Ephemeral'),'Premium_LRS',steps('storage').ostStorageSku)]",
+			"rsaPublicKey": "[basics('credentials').sshPublicKey]",
+			"storageAccount": "[steps('hsm').storageAccount.name]",
+			"storageContainer": "[steps('hsm').storageContainer]",
+			"storageSas": "[steps('hsm').storageSas]"
+        }
+    }
+}
