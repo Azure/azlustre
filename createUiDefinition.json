@@ -47,26 +47,40 @@
 					"hidePassword": true
                 },
                 "osPlatform": "Linux"
-            }, {
-				"name": "vnet",
-				"type": "Microsoft.Network.VirtualNetworkCombo",
-				"label": {
-					"virtualNetwork": "Virtual Network",
-					"subnets": "Subnets"
-				},
-				"constraints": {
-					"minAddressPrefixSize": "/24"
-				},
-				"subnets": {
-					"subnet1": {
-                        "label": "Subnet",
-                        "constraints": {
-                            "minAddressPrefixSize": "/29",
-                            "minAddressCount": 8,
-                            "requireContiguousAddresses": true
-                        }
-					}
+            },
+			{
+				"name": "getVnetName",
+				"type": "Microsoft.Solutions.ArmApiControl",
+				"request": {
+					"method": "GET",
+					"path": "[concat(subscription().id, '/providers/Microsoft.Network/virtualNetworks?api-version=2021-02-01')]"
 				}
+			},
+			{
+				"name": "vnet",
+				"type": "Microsoft.Common.DropDown",
+				"label": "Select storage container",
+				"toolTip": "Select a storage container from the available list.",
+				"filter": true,
+				"filterPlaceholder": "Filter items ...",
+				"multiLine": true,
+				"constraints": {
+					"allowedValues": "[ map( filter( basics('getVnetName').value, (item) => contains(item.location, location()) ), (item) => parse( concat( '{\"label\":\"', item.name, '\", \"description\":\"', substring( item.id, add(indexOf(item.id, 'resourceGroups/'), 15), sub( indexOf(item.id, '/providers'), add(indexOf(item.id, 'resourceGroups/'), 15) ) ), '\", \"value\":\"', item.id, '\"}' ) ) ) ]"
+				},
+				"visible": true
+			},
+			{
+				"name": "subnet",
+				"type": "Microsoft.Common.DropDown",
+				"label": "Select storage container",
+				"toolTip": "Select a storage container from the available list.",
+				"filter": true,
+				"filterPlaceholder": "Filter items ...",
+				"multiLine": true,
+				"constraints": {
+					"allowedValues": "[ map( first( map( filter( basics('getVnetName').value, (item) => equals(item.id, basics('vnet')) ), (item) => item.properties.subnets ) ), (item) => parse( concat( '{\"label\":\"', item.name, '\", \"value\":\"', item.name, '\"}' ) ) ) ]"
+				},
+				"visible": true
 			}
 		],
         "steps": [
@@ -96,9 +110,8 @@
 						"name": "mdtStorageSku",
 						"type": "Microsoft.Common.DropDown",
 						"label": "The OST storage type",
-						"placeholder": "",
 						"defaultValue": "Premium_LRS",
-						"toolTip": "",
+						"toolTip": "Choose the MDT storage tier",
 						"multiselect": false,
 						"multiLine": false,
 						"constraints": {
@@ -132,9 +145,8 @@
 						"name": "mdtDiskSize",
 						"type": "Microsoft.Common.DropDown",
 						"label": "Managed disk size for MDT",
-						"placeholder": "",
 						"defaultValue": "1 TiB",
-						"toolTip": "",
+						"toolTip": "The size of each attached managed disk",
 						"multiselect": false,
 						"multiLine": false,
 						"constraints": {
@@ -159,7 +171,7 @@
 						"min": 1,
                         "max": 16,
 						"defaultValue": 1,
-						"toolTip": "",
+						"toolTip": "Host cache option for the managed disks",
 						"constraints": {
 							"required": true
 						},
@@ -169,7 +181,6 @@
                         "name": "mdtCacheOption",
                         "type": "Microsoft.Common.DropDown",
                         "label": "Cache option for OST devices",
-                        "placeholder": "",
                         "defaultValue": "None",
                         "toolTip": "",
 						"multiselect": false,
@@ -202,7 +213,7 @@
 						"min": 1,
                         "max": 300,
 						"defaultValue": 4,
-						"toolTip": "",
+						"toolTip": "Number of OSS VMs",
 						"constraints": {
 							"required": true
 						},
@@ -226,9 +237,8 @@
 						"name": "ostStorageSku",
 						"type": "Microsoft.Common.DropDown",
 						"label": "The OST storage type",
-						"placeholder": "",
 						"defaultValue": "Premium_LRS",
-						"toolTip": "",
+						"toolTip": "Choose the OST storage tier",
 						"multiselect": false,
 						"multiLine": false,
 						"constraints": {
@@ -262,9 +272,8 @@
 						"name": "ostDiskSize",
 						"type": "Microsoft.Common.DropDown",
 						"label": "Managed disk size for OST",
-						"placeholder": "",
 						"defaultValue": "1 TiB",
-						"toolTip": "",
+						"toolTip": "The size of each attached managed disk",
 						"multiselect": false,
 						"multiLine": false,
 						"constraints": {
@@ -289,7 +298,7 @@
 						"min": 1,
                         "max": 32,
 						"defaultValue": 6,
-						"toolTip": "",
+						"toolTip": "Number of OST disks per OSS",
 						"constraints": {
 							"required": true
 						},
@@ -299,9 +308,8 @@
                         "name": "ostCacheOption",
                         "type": "Microsoft.Common.DropDown",
                         "label": "Cache option for OST devices",
-                        "placeholder": "",
                         "defaultValue": "None",
-                        "toolTip": "",
+                        "toolTip": "Host cache option for the managed disks",
 						"multiselect": false,
 						"multiLine": false,
 						"constraints": {
@@ -318,7 +326,6 @@
                         "name": "ossDiskSetup",
                         "type": "Microsoft.Common.DropDown",
                         "label": "OSS Disk Setup",
-                        "placeholder": "",
                         "defaultValue": "RAID",
                         "toolTip": "Multiple separate OSTs or a single RAIDed OST",
 						"multiselect": false,
@@ -356,7 +363,7 @@
 						}
 					},
 					{
-						"name": "armApiControl",
+						"name": "getStorageContainer",
 						"type": "Microsoft.Solutions.ArmApiControl",
 						"request": {
 							"method": "GET",
@@ -369,7 +376,7 @@
 						"label": "Select storage container",
 						"toolTip": "Select a storage container from the available list.",
 						"constraints": {
-							"allowedValues": "[map(steps('hsm').armApiControl.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]"
+							"allowedValues": "[map(steps('hsm').getStorageContainer.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]"
 						},
 						"visible": true
 					},
@@ -377,9 +384,10 @@
 						"name": "storageSas",
 						"type": "Microsoft.Common.TextBox",
 						"label": "Storage SAS Key",
-						"defaultValue": "",
-						"placeholder": "",
 						"toolTip": "The SAS key for the account/container",
+						"constraints": {
+							"required": false
+						},
 						"multiLine": false,
 						"visible": true
 					}
@@ -388,14 +396,11 @@
         ],
         "outputs": {
 			"adminUser": "[basics('adminUser')]",
-			"existingSubnetName": "[basics('vnet').subnets.subnet1.name]",
-			"existingVnetName": "[basics('vnet').name]",
-			"existingVnetResourceGroupName": "[basics('vnet').resourceGroup]",
+			"existingSubnetName": "[basics('subnet')]",
+			"existingVnetName": "[ substring( basics('vnet'), add(lastIndexOf(basics('vnet'), '/'), 1), sub( length(basics('vnet')), add(lastIndexOf(basics('vnet'), '/'), 1) ) ) ]",
+			"existingVnetResourceGroupName": "[ substring( basics('vnet'), add(indexOf(basics('vnet'), 'resourceGroups/'), 15), sub( indexOf(basics('vnet'), '/providers'), add(indexOf(basics('vnet'), 'resourceGroups/'), 15) ) ) ]",
 			"instanceCount": "[steps('storage').ossCount]",
 			"location": "[location()]",
-			"logAnalyticsAccount": "",
-			"logAnalyticsKey": "",
-			"logAnalyticsWorkspaceId": "",
 			"mdsSku": "[steps('metadata').mdsSku]",
 			"mdtCacheOption": "[steps('metadata').mdtCacheOption]",
 			"mdtDiskSize": "[steps('metadata').mdtDiskSize]",
