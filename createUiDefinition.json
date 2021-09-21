@@ -21,7 +21,6 @@
                 "type": "Microsoft.Compute.UserNameTextBox",
                 "label": "Username",
                 "toolTip": "Admin username for the VMs",
-				"defaultValue": "lustre",
                 "osPlatform": "Linux",
                 "constraints": {
                     "required": true
@@ -59,8 +58,8 @@
 			{
 				"name": "vnet",
 				"type": "Microsoft.Common.DropDown",
-				"label": "Select storage container",
-				"toolTip": "Select a storage container from the available list.",
+				"label": "Select existing VNet",
+				"toolTip": "Select the VNet from the list.",
 				"filter": true,
 				"filterPlaceholder": "Filter items ...",
 				"multiLine": true,
@@ -72,8 +71,8 @@
 			{
 				"name": "subnet",
 				"type": "Microsoft.Common.DropDown",
-				"label": "Select storage container",
-				"toolTip": "Select a storage container from the available list.",
+				"label": "Select subnet to use",
+				"toolTip": "Select the subnet from the list.",
 				"filter": true,
 				"filterPlaceholder": "Filter items ...",
 				"multiLine": true,
