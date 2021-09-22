@@ -179,9 +179,9 @@
                     {
                         "name": "mdtCacheOption",
                         "type": "Microsoft.Common.DropDown",
-                        "label": "Cache option for OST devices",
+                        "label": "Cache option for MDT devices",
                         "defaultValue": "None",
-                        "toolTip": "",
+                        "toolTip": "Host cache option for the managed disks",
 						"multiselect": false,
 						"multiLine": false,
 						"constraints": {
@@ -385,7 +385,9 @@
 						"label": "Storage SAS Key",
 						"toolTip": "The SAS key for the account/container",
 						"constraints": {
-							"required": false
+							"required": false,
+							"regex": "^.*sig=.*$",
+							"message": "Must be a valid SAS key."
 						},
 						"multiLine": false,
 						"visible": true
