@@ -33,7 +33,7 @@
                 "/tmp/lustre-setup-scripts/lfsrepo.sh 2.12.5",
                 "/tmp/lustre-setup-scripts/lfspkgs.sh",
                 "rm -rf /tmp/lustre-setup-scripts",
-                "yum -y install https://azurehpc.azureedge.net/rpms/lemur-azure-hsm-agent-2.0.0-lustre_2.12.x86_64.rpm https://azurehpc.azureedge.net/rpms/lemur-azure-data-movers-2.0.0-lustre_2.12.x86_64.rpm",
+                "yum -y install https://azurehpc.azureedge.net/rpms/lemur-azure-hsm-agent-2.0.1-lustre_2.12.x86_64.rpm https://azurehpc.azureedge.net/rpms/lemur-azure-data-movers-2.0.1-lustre_2.12.x86_64.rpm",
                 "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
             ],
             "inline_shebang": "/bin/sh -x",
