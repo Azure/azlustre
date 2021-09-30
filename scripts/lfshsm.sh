@@ -11,8 +11,8 @@ storage_container="$4"
 
 if ! rpm -q lemur-azure-hsm-agent lemur-azure-data-movers; then
     yum -y install \
-        https://azurehpc.azureedge.net/rpms/lemur-azure-hsm-agent-2.0.0-lustre_2.12.x86_64.rpm \
-        https://azurehpc.azureedge.net/rpms/lemur-azure-data-movers-2.0.0-lustre_2.12.x86_64.rpm
+        https://azurehpc.azureedge.net/rpms/lemur-azure-hsm-agent-2.0.1-lustre_2.12.x86_64.rpm \
+        https://azurehpc.azureedge.net/rpms/lemur-azure-data-movers-2.0.1-lustre_2.12.x86_64.rpm
 fi
 
 mkdir -p /var/run/lhsmd
