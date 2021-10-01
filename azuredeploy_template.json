@@ -132,7 +132,6 @@
             }
         },
         "mdtNumDisks": {
-            "defaultValue": 2,
             "type": "Int",
             "metadata": {
                 "description": "The number of disks in the MDT RAID"
@@ -160,7 +159,6 @@
             }
         },
         "ostNumDisks": {
-            "defaultValue": 6,
             "type": "Int",
             "metadata": {
                 "description": "The number of disks on each OSS"
