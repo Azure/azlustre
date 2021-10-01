@@ -114,14 +114,14 @@
             "defaultValue": "Premium_LRS",
             "type": "String",
             "metadata": {
-                "description": "The size of the MDT disks"
+                "description": "The SKU for the MDT disks"
             }
         },
         "mdtCacheOption": {
             "defaultValue": "ReadWrite",
             "type": "String",
             "metadata": {
-                "description": "The size of the MDT disks"
+                "description": "The caching option for the MDT disks"
             }
         },
         "mdtDiskSize": {
@@ -141,21 +141,21 @@
             "defaultValue": "Premium_LRS",
             "type": "String",
             "metadata": {
-                "description": "The size of the MDT disks"
+                "description": "The SKU for the OST disks"
             }
         },
         "ostCacheOption": {
             "defaultValue": "None",
             "type": "String",
             "metadata": {
-                "description": "The size of the MDT disks"
+                "description": "The caching option for the OST disks"
             }
         },
         "ostDiskSize": {
             "defaultValue": 1024,
             "type": "Int",
             "metadata": {
-                "description": "The size of the OSS disks"
+                "description": "The size of the OST disks"
             }
         },
         "ostNumDisks": {
