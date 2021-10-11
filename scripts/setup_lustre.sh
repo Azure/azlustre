@@ -36,6 +36,10 @@ elif [ -e /dev/sdc ]; then
 	devices='/dev/sd[c-m]'
 	n_devices=$(echo $devices | wc -w)
 	echo "Using $n_devices NVME devices"
+elif [ -e /dev/sdb ]; then
+	devices='/dev/sdb'
+	n_devices=1
+	echo "Using ephemeral disk on /dev/sdb"
 else
 	echo "ERROR: cannot find devices for storage"
 	exit 1
