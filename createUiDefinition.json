@@ -99,8 +99,8 @@
                         "toolTip": "The size of virtual machine to provision.",
                         "defaultValue": "Standard_D8s_v3",
                         "recommendedSizes": [
-                            "Standard_L8s_v2",
-                            "Standard_D8s_v3"
+                            "Standard_D8s_v3",
+                            "Standard_L8s_v2"
                         ],
                         "osPlatform": "Linux",
                         "count": 1
@@ -225,8 +225,8 @@
                         "toolTip": "The size of virtual machine to provision.",
                         "defaultValue": "Standard_D48s_v3",
                         "recommendedSizes": [
-                            "Standard_L48s_v2",
-                            "Standard_D48s_v3"
+                            "Standard_D48s_v3",
+                            "Standard_L48s_v2"
                         ],
                         "osPlatform": "Linux",
                         "count": 1,
