@@ -108,7 +108,7 @@
 					{
 						"name": "mdtStorageSku",
 						"type": "Microsoft.Common.DropDown",
-						"label": "The OST storage type",
+						"label": "The MDT storage type",
 						"defaultValue": "Premium_LRS",
 						"toolTip": "Choose the MDT storage tier",
 						"multiselect": false,
