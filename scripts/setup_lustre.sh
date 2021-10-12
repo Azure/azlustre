@@ -85,16 +85,7 @@ else
 	done
 
 
-	idx=0
-	for c in $(echo ${HOSTNAME##$mds} | grep -o .); do
-		echo $c		
-		idx=$(($idx * 36))
-		if [ -z "${c##[0-9]}" ]; then
-			idx=$(($idx + $c))
-		else
-			idx=$(($(printf "$idx + 10 + %d - %d" "'${c^^}" "'A")))
-		fi
-	done
+	idx=${HOSTNAME##${mds}-oss-}
 	
 	ost_index=$(( ( $idx * $n_devices ) + 1 ))
 

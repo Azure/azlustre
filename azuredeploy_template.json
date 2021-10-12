@@ -295,70 +295,78 @@
             }
         },
         {
-            "type": "Microsoft.Compute/virtualMachineScaleSets",
-            "apiVersion": "2021-07-01",
-            "name": "[concat(parameters('name'), '-vmss')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2021-03-01",
+            "name": "[concat(parameters('name'), '-oss-', copyIndex(), '-NetworkInterface')]",
             "location": "[parameters('location')]",
-            "plan": "[variables('imagePlan')]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
             },
-            "sku": {
-                "name": "[parameters('ossSku')]",
-                "tier": "Standard",
-                "capacity": "[parameters('instanceCount')]"
+            "copy": {
+                "name": "ossnicscopy",
+                "count": "[parameters('instanceCount')]"
             },
             "properties": {
-                "overprovision": true,
-                "upgradePolicy": {
-                    "mode": "Manual"
-                },
-                "virtualMachineProfile": {
-                    "storageProfile": {
-                        "imageReference": "[variables('imageReference')]",
-                        "osDisk": {
-                            "createOption": "FromImage",
-                            "caching": "ReadWrite"
-                        },
-                        "dataDisks": "[variables('ostDataDisks')]"
-                    },
-                    "osProfile": {
-                        "computerNamePrefix": "[parameters('name')]",
-                        "adminUsername": "[parameters('adminUser')]",
-                        "customData": "[base64(variables('ciScript'))]",
-                        "linuxConfiguration": {
-                            "disablePasswordAuthentication": true,
-                            "ssh": {
-                                "publicKeys": [
-                                    {
-                                        "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUser'))]",
-                                        "keyData": "[parameters('rsaPublicKey')]"
-                                    }
-                                ]
+                "ipConfigurations": [
+                    {
+                        "name": "[concat('ipConfig-oss-', copyIndex())]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnet')]"
                             }
                         }
-                    },
-                    "networkProfile": {
-                        "networkInterfaceConfigurations": [
-                            {
-                                "name": "[concat(parameters('name'), '-nic')]",
-                                "properties": {
-                                    "primary": true,
-                                    "enableAcceleratedNetworking": true,
-                                    "ipConfigurations": [
-                                        {
-                                            "name": "ipConfig-vmss",
-                                            "properties": {
-                                                "subnet": {
-                                                    "id": "[variables('subnet')]"
-                                                }
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        ]
                     }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-07-01",
+            "name": "[concat(parameters('name'), '-oss-', copyIndex())]",
+            "location": "[parameters('location')]",
+            "plan": "[variables('imagePlan')]",
+            "copy": {
+                "name": "osscopy",
+                "count": "[parameters('instanceCount')]"
+            },
+            "tags": {
+                "filesystem": "[variables('tagname')]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('ossSku')]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('name'), '-oss-', copyIndex())]",
+                    "adminUsername": "[parameters('adminUser')]",
+                    "customData": "[base64(variables('ciScript'))]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUser'))]",
+                                    "keyData": "[parameters('rsaPublicKey')]"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "storageProfile": {
+                    "imageReference": "[variables('imageReference')]",
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite"
+                    },
+                    "dataDisks": "[variables('ostDataDisks')]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-oss-', copyIndex(), '-NetworkInterface'))]"
+                        }
+                    ]
                 }
             }
         }
