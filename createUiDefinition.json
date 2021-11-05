@@ -387,7 +387,7 @@
 						"toolTip": "The SAS key for the account/container",
 						"constraints": {
 							"required": false,
-							"regex": "^[a-zA-Z0-9-=&%]{10,200}$",
+							"regex": "^[a-zA-Z0-9-=&%:/]{10,200}$",
 							"validationMessage": "Must only contain alphanumeric characters, hyphens, equals, percent and ampersand."
 						},
 						"multiLine": false,
