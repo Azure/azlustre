@@ -9,7 +9,7 @@
             "image_publisher": "OpenLogic",
             "image_offer": "CentOS",
             "image_sku": "7_8",
-            "image_version": "7.8.2020111300",
+            "image_version": "7.8.2020111300",            
             "managed_image_resource_group_name": "{{user `var_resource_group`}}",
             "managed_image_name": "{{user `var_image`}}",
             "os_type": "Linux",
@@ -25,6 +25,9 @@
             "destination": "/tmp"
         },
         {
+            "environment_vars": [
+                "lemur_version=2.0.4"
+            ],
             "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
             "inline": [
                 "chmod +x /tmp/lustre-setup-scripts/*.sh",
@@ -33,7 +36,7 @@
                 "/tmp/lustre-setup-scripts/lfsrepo.sh 2.12.5",
                 "/tmp/lustre-setup-scripts/lfspkgs.sh",
                 "rm -rf /tmp/lustre-setup-scripts",
-                "yum -y install https://azurehpc.azureedge.net/rpms/lemur-azure-hsm-agent-2.0.2-lustre_2.12.x86_64.rpm https://azurehpc.azureedge.net/rpms/lemur-azure-data-movers-2.0.2-lustre_2.12.x86_64.rpm",
+                "yum -y install https://github.com/edwardsp/lemur/releases/download/${lemur_version}/lemur-azure-hsm-agent-${lemur_version}-lustre_2.12.x86_64.rpm https://github.com/edwardsp/lemur/releases/download/${lemur_version}/lemur-azure-data-movers-${lemur_version}-lustre_2.12.x86_64.rpm",
                 "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"
             ],
             "inline_shebang": "/bin/sh -x",
