@@ -174,6 +174,20 @@
             "metadata": {
                 "description": "Create a single RAID or use multiple OSTs"
             }
+        },
+        "deployPolicyEngine": {
+            "defaultValue": false,
+            "type": "Bool",
+            "metadata": {
+                "description": "Deploy the Robinhood policy engine"
+            }
+        },
+        "rbhSku": {
+            "defaultValue": "Standard_D4s_v4",
+            "type": "String",
+            "metadata": {
+                "description": "The VM type for running Robinhood."
+            }
         }
     },
     "variables": {
@@ -222,7 +236,7 @@
     },
     "functions": [],
     "resources": [
-        {
+         {
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "2021-03-01",
             "name": "[concat(parameters('name'), '-NetworkInterface')]",
@@ -289,6 +303,79 @@
                     "networkInterfaces": [
                         {
                             "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-NetworkInterface'))]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "condition": "[parameters('deployPolicyEngine')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2021-03-01",
+            "name": "[concat(parameters('name'), '-rbh-NetworkInterface')]",
+            "location": "[parameters('location')]",
+            "tags": {
+                "filesystem": "[variables('tagname')]"
+            },
+            "properties": {
+                "enableAcceleratedNetworking": true,
+                "ipConfigurations": [
+                    {
+                        "name": "ipConfig",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnet')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "condition": "[parameters('deployPolicyEngine')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-07-01",
+            "name": "[concat(parameters('name'), '-rbh')]",
+            "location": "[parameters('location')]",
+            "plan": "[variables('imagePlan')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-rbh-NetworkInterface'))]"
+            ],
+            "tags": {
+                "filesystem": "[variables('tagname')]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('rbhSku')]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('name'), 'rbh')]",
+                    "adminUsername": "[parameters('adminUser')]",
+                    "customData": "[base64(variables('ciScript'))]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUser'))]",
+                                    "keyData": "[parameters('rsaPublicKey')]"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "storageProfile": {
+                    "imageReference": "[variables('imageReference')]",
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-rbh-NetworkInterface'))]"
                         }
                     ]
                 }
