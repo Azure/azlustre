@@ -14,4 +14,5 @@
     logAnalyticsAccount \
     logAnalyticsWorkspaceId \
     logAnalyticsKey \
-    ossDiskSetup
+    ossDiskSetup \
+    deployPolicyEngine
