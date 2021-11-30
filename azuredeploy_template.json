@@ -89,27 +89,6 @@
                 "description": "A SAS key for the storage account"
             }
         },
-        "logAnalyticsAccount": {
-            "defaultValue": "",
-            "type": "String",
-            "metadata": {
-                "description": "Optional. The log analytics account to use (leave blank to disable logging)"
-            }
-        },
-        "logAnalyticsWorkspaceId": {
-            "defaultValue": "",
-            "type": "String",
-            "metadata": {
-                "description": " The log analytics workspace id"
-            }
-        },
-        "logAnalyticsKey": {
-            "defaultValue": "",
-            "type": "String",
-            "metadata": {
-                "description": "The log analytics account key"
-            }
-        },
         "mdtStorageSku": {
             "defaultValue": "Premium_LRS",
             "type": "String",
@@ -321,7 +300,7 @@
                 "enableAcceleratedNetworking": true,
                 "ipConfigurations": [
                     {
-                        "name": "ipConfig",
+                        "name": "rbhIpConfig",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "subnet": {

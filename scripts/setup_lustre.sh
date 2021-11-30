@@ -11,21 +11,15 @@ n_oss="$2"
 storage_account="$3" 
 storage_sas="$4"
 storage_container="$5"
-log_analytics_name="$6"
-log_analytics_workspace_id="$7"
-log_analytics_key="$8"
-oss_disk_setup="$9"
-deploy_policy_engine="${10}"
+oss_disk_setup="$6"
+deploy_policy_engine="$7"
 
 echo mds="$1"
 echo n_oss="$2"
 echo storage_account="$3" 
 echo storage_sas="${4/sig=*/sig=REDACTED}"
 echo storage_container="$5"
-echo log_analytics_name="$6"
-echo log_analytics_workspace_id="$7"
-echo log_analytics_key="$8"
-echo oss_disk_setup="$9"
+echo oss_disk_setup="$6"
 
 rbh="${mds}rbh"
 
@@ -125,10 +119,10 @@ if [ "${use_hsm,,}" = "true" ]; then
 		# deploy on the MDS if we aren't using a policy engine
 		if [ "$deploy_policy_engine" = "True" ]; then
 
-			# register cl1
-			lfs --device LustreFS-MDT0000 changelog_register
-			# register cl2
-			lfs --device LustreFS-MDT0000 changelog_register
+			# register cl1 - robinhood
+			lctl --device LustreFS-MDT0000 changelog_register
+			# register cl2 - lustremetasync
+			lctl --device LustreFS-MDT0000 changelog_register
 
 		else
 
@@ -145,8 +139,11 @@ if [ "${use_hsm,,}" = "true" ]; then
 
 		# IMPORT CONTAINER
 		mkdir /lustre
-		echo "${mds}@tcp0:/LustreFS $lfs_mount lustre flock,defaults,_netdev 0 0" >> /etc/fstab
-		mount -a
+		echo "${mds}@tcp0:/LustreFS /lustre lustre flock,defaults,_netdev 0 0" >> /etc/fstab
+		while ! mount -a; do
+			echo "Sleeping for 10s before retrying"
+			sleep 10
+		done
 		chmod 777 /lustre
 		
 		$script_dir/lfsimport.sh "$storage_account" "$storage_sas" "$storage_container" /lustre
@@ -158,11 +155,5 @@ if [ "${use_hsm,,}" = "true" ]; then
 		$script_dir/lfshsm.sh "$mds" "$storage_account" "$storage_sas" "$storage_container"
 
 	fi
-
-fi
-
-if [ "${use_log_analytics,,}" = "true" ]; then
-
-	$script_dir/lfsloganalytics.sh $log_analytics_name $log_analytics_workspace_id "$log_analytics_key"
 
 fi
