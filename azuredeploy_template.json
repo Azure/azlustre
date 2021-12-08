@@ -176,8 +176,10 @@
             }
         },
         "availabilityZone": {
-            "defaultValue": "1",
-            "type": "String",
+            "defaultValue": 1,
+            "type": "Int",
+            "minValue": 1,
+            "maxValue": 3,
             "metadata": {
                 "description": "The availability zone to use for the Lustre nodes"
             }
