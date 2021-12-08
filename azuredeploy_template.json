@@ -167,6 +167,20 @@
             "metadata": {
                 "description": "The VM type for running Robinhood."
             }
+        },
+        "useAvailabilityZone": {
+            "defaultValue": false,
+            "type": "Bool",
+            "metadata": {
+                "description": "Use an availability zone for the Lustre nodes"
+            }
+        },
+        "availabilityZone": {
+            "defaultValue": "1",
+            "type": "String",
+            "metadata": {
+                "description": "The availability zone to use for the Lustre nodes"
+            }
         }
     },
     "variables": {
@@ -244,6 +258,7 @@
             "name": "[parameters('name')]",
             "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
+            "zones": "[if(parameters('useAvailabilityZone'), array(format('{0}', parameters('availabilityZone'))), null())]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-NetworkInterface'))]"
             ],
@@ -318,6 +333,7 @@
             "name": "[concat(parameters('name'), '-rbh')]",
             "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
+            "zones": "[if(parameters('useAvailabilityZone'), array(format('{0}', parameters('availabilityZone'))), null())]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-rbh-NetworkInterface'))]"
             ],
@@ -366,6 +382,7 @@
             "name": "[concat(parameters('name'), '-vmss')]",
             "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
+            "zones": "[if(parameters('useAvailabilityZone'), array(format('{0}', parameters('availabilityZone'))), null())]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
             },
