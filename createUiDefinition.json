@@ -350,48 +350,80 @@
                 "bladeTitle": "Object Storage (HSM)",
                 "elements": [
 					{
-						"name": "storageAccount",
-						"type": "Microsoft.Solutions.ResourceSelector",
-						"label": "Select storage accounts",
-						"toolTip": "Select a storage account from the available list.",
-						"resourceType": "Microsoft.Storage/storageAccounts",
-						"options": {
-							"filter": {
-								"subscription": "onBasics",
-								"location": "onBasics"
+						"name": "enableHsm",
+						"type": "Microsoft.Common.CheckBox",
+						"label": "Enable HSM"
+					},
+					{
+						"name": "hsmStorageDetails",
+						"type": "Microsoft.Common.Section",
+						"label": "Storage Account Details",
+						"elements": [
+							{
+								"name": "storageAccount",
+								"type": "Microsoft.Solutions.ResourceSelector",
+								"label": "Select storage accounts",
+								"toolTip": "Select a storage account from the available list.",
+								"resourceType": "Microsoft.Storage/storageAccounts",
+								"options": {
+									"filter": {
+										"subscription": "onBasics",
+										"location": "onBasics"
+									}
+								}
+							},
+							{
+								"name": "getStorageContainer",
+								"type": "Microsoft.Solutions.ArmApiControl",
+								"request": {
+									"method": "GET",
+									"path": "[concat(steps('hsm').hsmStorageDetails.storageAccount.id, '/blobServices/default/containers?api-version=2021-04-01')]"
+								}
+							},
+							{
+								"name": "storageContainer",
+								"type": "Microsoft.Common.DropDown",
+								"label": "Select storage container",
+								"toolTip": "Select a storage container from the available list.",
+								"constraints": {
+									"allowedValues": "[map(steps('hsm').hsmStorageDetails.getStorageContainer.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]"
+								},
+								"visible": true
+							},
+							{
+								"name": "storageSas",
+								"type": "Microsoft.Common.TextBox",
+								"label": "Storage SAS Key",
+								"toolTip": "The SAS key for the account/container",
+								"constraints": {
+									"required": false,
+									"regex": "^[a-zA-Z0-9-=&%:/]{10,200}$",
+									"validationMessage": "Must only contain alphanumeric characters, hyphens, equals, percent and ampersand."
+								},
+								"multiLine": false,
+								"visible": true
 							}
-						}
+						],
+						"visible": "[steps('hsm').enableHsm]"
 					},
 					{
-						"name": "getStorageContainer",
-						"type": "Microsoft.Solutions.ArmApiControl",
-						"request": {
-							"method": "GET",
-							"path": "[concat(steps('hsm').storageAccount.id, '/blobServices/default/containers?api-version=2021-04-01')]"
-						}
+						"name": "enablePolicyEngine",
+						"type": "Microsoft.Common.CheckBox",
+						"label": "Deploy Policy Engine",
+						"visible": "[steps('hsm').enableHsm]"
 					},
 					{
-						"name": "storageContainer",
-						"type": "Microsoft.Common.DropDown",
-						"label": "Select storage container",
-						"toolTip": "Select a storage container from the available list.",
-						"constraints": {
-							"allowedValues": "[map(steps('hsm').getStorageContainer.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]"
-						},
-						"visible": true
-					},
-					{
-						"name": "storageSas",
-						"type": "Microsoft.Common.TextBox",
-						"label": "Storage SAS Key",
-						"toolTip": "The SAS key for the account/container",
-						"constraints": {
-							"required": false,
-							"regex": "^[a-zA-Z0-9-=&%:/]{10,200}$",
-							"validationMessage": "Must only contain alphanumeric characters, hyphens, equals, percent and ampersand."
-						},
-						"multiLine": false,
-						"visible": true
+						"name": "policyEngineDetails",
+						"type": "Microsoft.Common.Section",
+						"label": "Policy Enging Details",
+						"elements": [
+							{
+								"name": "test",
+								"type": "Microsoft.Common.CheckBox",
+								"label": "Deploy Policy Engine"
+							}
+						],
+						"visible": "[and(steps('hsm').enablePolicyEngine, steps('hsm').enablePolicyEngine)]"
 					}
                 ]
             }
