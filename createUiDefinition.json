@@ -56,30 +56,75 @@
 				}
 			},
 			{
-				"name": "vnet",
-				"type": "Microsoft.Common.DropDown",
-				"label": "Select existing VNet",
-				"toolTip": "Select the VNet from the list.",
-				"filter": true,
-				"filterPlaceholder": "Filter items ...",
-				"multiLine": true,
-				"constraints": {
-					"allowedValues": "[ map( filter( basics('getVnetName').value, (item) => contains(item.location, location()) ), (item) => parse( concat( '{\"label\":\"', item.name, '\", \"description\":\"', substring( item.id, add(indexOf(item.id, 'resourceGroups/'), 15), sub( indexOf(item.id, '/providers'), add(indexOf(item.id, 'resourceGroups/'), 15) ) ), '\", \"value\":\"', item.id, '\"}' ) ) ) ]"
-				},
-				"visible": true
+				"name": "networking",
+				"type": "Microsoft.Common.Section",
+				"label": "Networking",
+				"elements": [
+					{
+						"name": "vnet",
+						"type": "Microsoft.Common.DropDown",
+						"label": "Select existing VNet",
+						"toolTip": "Select the VNet from the list.",
+						"filter": true,
+						"filterPlaceholder": "Filter items ...",
+						"multiLine": true,
+						"constraints": {
+							"allowedValues": "[ map( filter( basics('getVnetName').value, (item) => contains(item.location, location()) ), (item) => parse( concat( '{\"label\":\"', item.name, '\", \"description\":\"', substring( item.id, add(indexOf(item.id, 'resourceGroups/'), 15), sub( indexOf(item.id, '/providers'), add(indexOf(item.id, 'resourceGroups/'), 15) ) ), '\", \"value\":\"', item.id, '\"}' ) ) ) ]"
+						},
+						"visible": true
+					},
+					{
+						"name": "subnet",
+						"type": "Microsoft.Common.DropDown",
+						"label": "Select subnet to use",
+						"toolTip": "Select the subnet from the list.",
+						"filter": true,
+						"filterPlaceholder": "Filter items ...",
+						"multiLine": true,
+						"constraints": {
+							"allowedValues": "[ map( first( map( filter( basics('getVnetName').value, (item) => equals(item.id, basics('networking').vnet) ), (item) => item.properties.subnets ) ), (item) => parse( concat( '{\"label\":\"', item.name, '\", \"value\":\"', item.name, '\"}' ) ) ) ]"
+						},
+						"visible": true
+					}
+				]
 			},
 			{
-				"name": "subnet",
-				"type": "Microsoft.Common.DropDown",
-				"label": "Select subnet to use",
-				"toolTip": "Select the subnet from the list.",
-				"filter": true,
-				"filterPlaceholder": "Filter items ...",
-				"multiLine": true,
-				"constraints": {
-					"allowedValues": "[ map( first( map( filter( basics('getVnetName').value, (item) => equals(item.id, basics('vnet')) ), (item) => item.properties.subnets ) ), (item) => parse( concat( '{\"label\":\"', item.name, '\", \"value\":\"', item.name, '\"}' ) ) ) ]"
-				},
-				"visible": true
+				"name": "proximity",
+				"type": "Microsoft.Common.Section",
+				"label": "Proximity",
+				"elements": [
+					{
+						"name": "useAvailabilityZone",
+						"type": "Microsoft.Common.CheckBox",
+						"label": "Use availability zone",
+						"toolTip": "Enable checkbox to choose an availability zone."
+					},
+					{
+						"name": "availabilityZone",
+						"type": "Microsoft.Common.DropDown",
+						"label": "Select the availability zone",
+						"defaultValue": "Availability Zone 1",
+						"toolTip": "Select the availability zone to use",
+						"constraints": {
+							"allowedValues": [
+								{
+									"label": "Availability Zone 1",
+									"value": 1
+								},
+								{
+									"label": "Availability Zone 2",
+									"value": 2
+								},
+								{
+									"label": "Availability Zone 3",
+									"value": 3
+								}
+							],
+							"required": true
+						},
+						"visible": "[basics('proximity').useAvailabilityZone.value]"
+					}
+				]
 			}
 		],
         "steps": [
@@ -418,9 +463,18 @@
 						"label": "Policy Enging Details",
 						"elements": [
 							{
-								"name": "test",
-								"type": "Microsoft.Common.CheckBox",
-								"label": "Deploy Policy Engine"
+								"name": "rbhSku",
+								"type": "Microsoft.Compute.SizeSelector",
+								"label": "Policy engine server size",
+								"toolTip": "The size of virtual machine to provision.",
+								"defaultValue": "Standard_D4s_v3",
+								"recommendedSizes": [
+									"Standard_D4s_v3",
+									"Standard_D8s_v3",
+									"Standard_D16s_v3"
+								],
+								"osPlatform": "Linux",
+								"count": 1
 							}
 						],
 						"visible": "[and(steps('hsm').enablePolicyEngine, steps('hsm').enablePolicyEngine)]"
@@ -430,9 +484,9 @@
         ],
         "outputs": {
 			"adminUser": "[basics('adminUser')]",
-			"existingSubnetName": "[basics('subnet')]",
-			"existingVnetName": "[ substring( basics('vnet'), add(lastIndexOf(basics('vnet'), '/'), 1), sub( length(basics('vnet')), add(lastIndexOf(basics('vnet'), '/'), 1) ) ) ]",
-			"existingVnetResourceGroupName": "[ substring( basics('vnet'), add(indexOf(basics('vnet'), 'resourceGroups/'), 15), sub( indexOf(basics('vnet'), '/providers'), add(indexOf(basics('vnet'), 'resourceGroups/'), 15) ) ) ]",
+			"existingSubnetName": "[basics('networking').subnet]",
+			"existingVnetName": "[ substring( basics('networking').vnet, add(lastIndexOf(basics('networking').vnet, '/'), 1), sub( length(basics('networking').vnet), add(lastIndexOf(basics('networking').vnet, '/'), 1) ) ) ]",
+			"existingVnetResourceGroupName": "[ substring( basics('networking').vnet, add(indexOf(basics('networking').vnet, 'resourceGroups/'), 15), sub( indexOf(basics('networking').vnet, '/providers'), add(indexOf(basics('networking').vnet, 'resourceGroups/'), 15) ) ) ]",
 			"instanceCount": "[steps('storage').ossCount]",
 			"location": "[location()]",
 			"mdsSku": "[steps('metadata').mdsSku]",
@@ -448,9 +502,13 @@
 			"ostNumDisks": "[if(equals(steps('storage').ostStorageSku,'Ephemeral'),0,steps('storage').ostNumDisks)]",
 			"ostStorageSku": "[if(equals(steps('storage').ostStorageSku,'Ephemeral'),'Premium_LRS',steps('storage').ostStorageSku)]",
 			"rsaPublicKey": "[basics('credentials').sshPublicKey]",
-			"storageAccount": "[steps('hsm').storageAccount.name]",
-			"storageContainer": "[steps('hsm').storageContainer]",
-			"storageSas": "[steps('hsm').storageSas]"
+			"storageAccount": "[steps('hsm').hsmStorageDetails.storageAccount.name]",
+			"storageContainer": "[steps('hsm').hsmStorageDetails.storageContainer]",
+			"storageSas": "[steps('hsm').hsmStorageDetails.storageSas]",
+			"useAvailabilityZone": "[basics('proximity').useAvailabilityZone]",
+			"availabilityZone": "[basics('proximity').availabilityZone]",
+			"deployPolicyEngine": "[steps('hsm').enablePolicyEngine]",
+			"policyEngineSku": "[steps('hsm').policyEngineDetails.rbhSku]"
         }
     }
 }
