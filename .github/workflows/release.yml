@@ -43,7 +43,7 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Build ARM template and marketplace zipfile
-        run: build_marketplace.sh ${{ env.version_tag }}
+        run: ./build_marketplace.sh ${{ env.version_tag }}
       
       - name: Release
         uses: softprops/action-gh-release@v1
