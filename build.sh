@@ -11,7 +11,5 @@
     storageAccount \
     storageSas \
     storageContainer \
-    logAnalyticsAccount \
-    logAnalyticsWorkspaceId \
-    logAnalyticsKey \
-    ossDiskSetup
+    ossDiskSetup \
+    deployPolicyEngine

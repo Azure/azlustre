@@ -1,0 +1,54 @@
+# This is a basic workflow to help you get started with Actions
+
+name: release
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  #workflow_dispatch:
+  
+  push:
+    tags:
+    - '*'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  release:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    container:
+      image: paulmedwards/azlustre-wf:latest
+      options: --user 0
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2.4.0
+        with:
+          fetch-depth: 0
+
+      - name: get version tag
+        run: echo "version_tag=$(git describe --tags --always --dirty | tr '-' '_')" >> $GITHUB_ENV
+
+      - name: print release name
+        run: echo "version tag = ${{ env.version_tag }}"
+
+      - name: list current working dir
+        run: ls -lart
+
+      - name: git status
+        run: git status
+
+      # Runs a single command using the runners shell
+      - name: Build ARM template and marketplace zipfile
+        run: build_marketplace.sh ${{ env.version_tag }}
+      
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ env.version_tag }}
+          files: |
+            azuredeploy.json
+            azurehpc-lustre-fs-${{ env.version_tag }}.zip

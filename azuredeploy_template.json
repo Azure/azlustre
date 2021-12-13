@@ -89,27 +89,6 @@
                 "description": "A SAS key for the storage account"
             }
         },
-        "logAnalyticsAccount": {
-            "defaultValue": "",
-            "type": "String",
-            "metadata": {
-                "description": "Optional. The log analytics account to use (leave blank to disable logging)"
-            }
-        },
-        "logAnalyticsWorkspaceId": {
-            "defaultValue": "",
-            "type": "String",
-            "metadata": {
-                "description": " The log analytics workspace id"
-            }
-        },
-        "logAnalyticsKey": {
-            "defaultValue": "",
-            "type": "String",
-            "metadata": {
-                "description": "The log analytics account key"
-            }
-        },
         "mdtStorageSku": {
             "defaultValue": "Premium_LRS",
             "type": "String",
@@ -174,6 +153,36 @@
             "metadata": {
                 "description": "Create a single RAID or use multiple OSTs"
             }
+        },
+        "deployPolicyEngine": {
+            "defaultValue": false,
+            "type": "Bool",
+            "metadata": {
+                "description": "Deploy the Robinhood policy engine"
+            }
+        },
+        "rbhSku": {
+            "defaultValue": "Standard_D4s_v4",
+            "type": "String",
+            "metadata": {
+                "description": "The VM type for running Robinhood."
+            }
+        },
+        "useAvailabilityZone": {
+            "defaultValue": false,
+            "type": "Bool",
+            "metadata": {
+                "description": "Use an availability zone for the Lustre nodes"
+            }
+        },
+        "availabilityZone": {
+            "defaultValue": 1,
+            "type": "Int",
+            "minValue": 1,
+            "maxValue": 3,
+            "metadata": {
+                "description": "The availability zone to use for the Lustre nodes"
+            }
         }
     },
     "variables": {
@@ -222,7 +231,7 @@
     },
     "functions": [],
     "resources": [
-        {
+         {
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "2021-03-01",
             "name": "[concat(parameters('name'), '-NetworkInterface')]",
@@ -251,6 +260,7 @@
             "name": "[parameters('name')]",
             "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
+            "zones": "[if(parameters('useAvailabilityZone'), array(format('{0}', parameters('availabilityZone'))), null())]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-NetworkInterface'))]"
             ],
@@ -295,11 +305,86 @@
             }
         },
         {
+            "condition": "[parameters('deployPolicyEngine')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2021-03-01",
+            "name": "[concat(parameters('name'), '-rbh-NetworkInterface')]",
+            "location": "[parameters('location')]",
+            "tags": {
+                "filesystem": "[variables('tagname')]"
+            },
+            "properties": {
+                "enableAcceleratedNetworking": true,
+                "ipConfigurations": [
+                    {
+                        "name": "rbhIpConfig",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnet')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "condition": "[parameters('deployPolicyEngine')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-07-01",
+            "name": "[concat(parameters('name'), '-rbh')]",
+            "location": "[parameters('location')]",
+            "plan": "[variables('imagePlan')]",
+            "zones": "[if(parameters('useAvailabilityZone'), array(format('{0}', parameters('availabilityZone'))), null())]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-rbh-NetworkInterface'))]"
+            ],
+            "tags": {
+                "filesystem": "[variables('tagname')]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('rbhSku')]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('name'), 'rbh')]",
+                    "adminUsername": "[parameters('adminUser')]",
+                    "customData": "[base64(variables('ciScript'))]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUser'))]",
+                                    "keyData": "[parameters('rsaPublicKey')]"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "storageProfile": {
+                    "imageReference": "[variables('imageReference')]",
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('name'), '-rbh-NetworkInterface'))]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
             "type": "Microsoft.Compute/virtualMachineScaleSets",
             "apiVersion": "2021-07-01",
             "name": "[concat(parameters('name'), '-vmss')]",
             "location": "[parameters('location')]",
             "plan": "[variables('imagePlan')]",
+            "zones": "[if(parameters('useAvailabilityZone'), array(format('{0}', parameters('availabilityZone'))), null())]",
             "tags": {
                 "filesystem": "[variables('tagname')]"
             },
