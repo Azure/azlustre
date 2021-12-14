@@ -463,7 +463,7 @@
 						"label": "Policy Enging Details",
 						"elements": [
 							{
-								"name": "rbhSku",
+								"name": "policyEngineSku",
 								"type": "Microsoft.Compute.SizeSelector",
 								"label": "Policy engine server size",
 								"toolTip": "The size of virtual machine to provision.",
@@ -508,7 +508,7 @@
 			"useAvailabilityZone": "[basics('proximity').useAvailabilityZone]",
 			"availabilityZone": "[basics('proximity').availabilityZone]",
 			"deployPolicyEngine": "[steps('hsm').enablePolicyEngine]",
-			"policyEngineSku": "[steps('hsm').policyEngineDetails.rbhSku]"
+			"policyEngineSku": "[steps('hsm').policyEngineDetails.policyEngineSku]"
         }
     }
 }

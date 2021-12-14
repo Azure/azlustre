@@ -161,7 +161,7 @@
                 "description": "Deploy the Robinhood policy engine"
             }
         },
-        "rbhSku": {
+        "policyEngineSku": {
             "defaultValue": "Standard_D4s_v4",
             "type": "String",
             "metadata": {
@@ -344,7 +344,7 @@
             },
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "[parameters('rbhSku')]"
+                    "vmSize": "[parameters('policyEngineSku')]"
                 },
                 "osProfile": {
                     "computerName": "[concat(parameters('name'), 'rbh')]",
