@@ -242,6 +242,10 @@ HSM was designed for just archive data and assumes the metadata target will pers
 * Updating owner/attribute changes to files and directories
 * Handle moving files/directories
 
+This is diagram shows show the Lustre is set up with HSM and the policy engine:
+
+![Lustre with HSM and policy engine](images/azurehpc-lustre-fs-setup.png)
+
 The RobinHood setup has the following options:
 
 * Files are archived after 30 minutes of in-activity
