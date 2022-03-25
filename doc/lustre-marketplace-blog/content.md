@@ -166,7 +166,7 @@ The version of Lustre is 2.12.5 although later versions of the client are usuall
 Below is a script that will install the Lustre client packages on a CentOS 7.8.
 
 ```
-lustre_version=2.12.5
+lustre_dir=lustre-2.12.5
 
 # set up the Lustre repository
 cat << EOF >/etc/yum.repos.d/LustrePack.repo
