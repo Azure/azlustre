@@ -198,9 +198,8 @@ if ! rpm -q kernel-devel-${kernel_version}; then
 fi
 
 # install the client RPMs if not already installed
-if ! rpm -q lustre-client lustre-client-dkms; then
-    yum -y install epel-release
-    yum -y install lustre-client lustre-client-dkms || exit 1
+if ! rpm -q lustre-client kmod-lustre-client; then
+    yum -y install lustre-client kmod-lustre-client
 fi
 weak-modules --add-kernel $(uname -r)
 ```
