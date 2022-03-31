@@ -8,6 +8,8 @@ The AzureHPC Lustre Marketplace offer provides a fast and easy way to deploy a L
 * Option to deploy a policy manager to keep the file system synchronised with Azure BLOB storage including automatic backup
 * Dashboard to monitor Lustre performance​
 
+> Disclaimer: The Marketplace offer will create the initial Filesystem that is up to the end user to manage. Support will only be provided on a best effort basis through "Issues" on the [azlustre](https://github.com/Azure/azlustre) github page.
+
 ## Example Sizes
 
 When choosing VM and disk options you should pay attention to the different limits.  Here are the potential bottlenecks:
