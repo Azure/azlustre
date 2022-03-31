@@ -189,14 +189,6 @@ enabled=1
 gpgcheck=0
 EOF
 
-# install the right kernel devel if not installed
-release_version=$(cat /etc/redhat-release | cut -d' ' -f4)
-kernel_version=$(uname -r)
-
-if ! rpm -q kernel-devel-${kernel_version}; then
-    yum -y install http://olcentgbl.trafficmanager.net/centos/${release_version}/updates/x86_64/kernel-devel-${kernel_version}.rpm
-fi
-
 # install the client RPMs if not already installed
 if ! rpm -q lustre-client kmod-lustre-client; then
     yum -y install lustre-client kmod-lustre-client
