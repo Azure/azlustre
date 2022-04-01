@@ -205,7 +205,7 @@ lustre_name=lustre
 lustre_mount=/lustre
 
 mkdir -p $lustre_mount
-echo "${lustre}@tcp0:/LustreFS $lustre_mount lustre flock,defaults,_netdev 0 0" >> /etc/fstab
+echo "${lustre_name}@tcp0:/LustreFS $lustre_mount lustre flock,defaults,_netdev 0 0" >> /etc/fstab
 mount -a
 ```
 
