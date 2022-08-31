@@ -129,7 +129,7 @@ if [ "${use_hsm,,}" = "true" ]; then
 			# IMPORT CONTAINER (so mount lustre on the mds to import)
 			mkdir /lustre
 			mount -t lustre ${mds}@tcp0:/LustreFS /lustre
-			chmod 777 /lustre
+			chmod 770 /lustre
 
 			$script_dir/lfsimport.sh "$storage_account" "$storage_sas" "$storage_container" /lustre
 		
@@ -144,7 +144,7 @@ if [ "${use_hsm,,}" = "true" ]; then
 			echo "Sleeping for 10s before retrying"
 			sleep 10
 		done
-		chmod 777 /lustre
+		chmod 770 /lustre
 		
 		$script_dir/lfsimport.sh "$storage_account" "$storage_sas" "$storage_container" /lustre
 		
