@@ -53,7 +53,11 @@ else
 		n_devices=$(echo $devices | wc -w)
 		echo "Using $n_devices NVME devices"
 	elif [ -e /dev/sdc ]; then
-		devices='/dev/sd[c-m]'
+		if [[ "$(df -h)" == *"dev/sdb"* ]]; then
+		   devices='/dev/sd[c-m]'
+		else 
+		   devices='/dev/sd[b-m]'
+		fi
 		n_devices=$(echo $devices | wc -w)
 		echo "Using $n_devices NVME devices"
 	elif [ -e /dev/sdb ]; then
