@@ -14,6 +14,4 @@
     ossDiskSetup \
     deployPolicyEngine \
     mdtStorageSku \
-    mdtNumDisks \
-    ostStorageSku \
-    ostNumDisks
+    ostStorageSku

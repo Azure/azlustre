@@ -14,17 +14,13 @@ storage_container="$5"
 oss_disk_setup="$6"
 deploy_policy_engine="$7"
 mdt_storage_sku="$8"
-num_mdts="$9"
-ost_storage_sku="${10}"
-num_osts="${11}"
+ost_storage_sku="$9"
 
 
 if [ "$HOSTNAME" = "$mds" ]; then
 	storage_sku="$mdt_storage_sku"
-	num_disks="$num_mdts"
 else
 	storage_sku="$ost_storage_sku"
-	num_disks="$num_osts"
 fi
 
 echo mds="$1"
@@ -35,11 +31,8 @@ echo storage_container="$5"
 echo oss_disk_setup="$6"
 echo deploy_policy_engine="$7"
 echo mdt_storage_sku="$8"
-echo num_msts="$9"
-echo ost_storage_sku="${10}"
-echo num_osts="${11}"
+echo ost_storage_sku="$9"
 echo storage_sku="$storage_sku"
-echo num_disks="$num_disks"
 
 
 rbh="${mds}rbh"
@@ -74,28 +67,18 @@ else
 			devices='/dev/nvme*n1'
 			n_devices=$(echo $devices | wc -w)
 			echo "Using $n_devices NVME devices"
-		elif [ -e /dev/sdb ]; then
-			devices='/dev/sdb'
+		elif [ -e /dev/disk/azure/resource ]; then
+			devices='/dev/disk/azure/resource'
 			n_devices=1
-			echo "Using ephemeral disk on /dev/sdb"
+			echo "Using ephemeral disk on /dev/disk/azure/resource"
 		else
 			echo "ERROR: cannot find devices for storage"
 			exit 1
 		fi
 	else
-		if [ -e /dev/nvme0n1 ]; then
-			devices='/dev/nvme*n1'
+		if [ -d /dev/disk/azure/scsi1 ]; then
+			devices='/dev/disk/azure/scsi1/*'
 			n_devices=$(echo $devices | wc -w)
-			echo "Using $n_devices NVME devices"
-		elif [ -e /dev/sdb ]; then
-			devices='/dev/sd[b-m]'
-			n_devices=$(echo $devices | wc -w)
-
-			if [ "$n_devices" -gt "$num_disks" ]; then
-				echo "VM has ephemeral disk, ignoring /dev/sdb"
-				devices='/dev/sd[c-m]'
-				n_devices=$(echo $devices | wc -w)
-			fi
 
 			echo "Using $n_devices managed disks"
 		else
