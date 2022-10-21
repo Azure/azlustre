@@ -12,4 +12,8 @@
     storageSas \
     storageContainer \
     ossDiskSetup \
-    deployPolicyEngine
+    deployPolicyEngine \
+    mdtStorageSku \
+    mdtNumDisks \
+    ostStorageSku \
+    ostNumDisks
