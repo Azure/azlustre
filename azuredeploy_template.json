@@ -366,7 +366,8 @@
                     "imageReference": "[variables('imageReference')]",
                     "osDisk": {
                         "createOption": "FromImage",
-                        "caching": "ReadWrite"
+                        "caching": "ReadWrite",
+                        "diskSizeGB": 256
                     }
                 },
                 "networkProfile": {
