@@ -168,6 +168,13 @@
                 "description": "The VM type for running Robinhood."
             }
         },
+        "rbhDiskSize": {
+            "defaultValue": 64,
+            "type": "Int",
+            "metadata": {
+                "description": "The Robinhood VM OS Disk Size (in GiB)"
+            }
+        },
         "useAvailabilityZone": {
             "defaultValue": false,
             "type": "Bool",
@@ -366,7 +373,8 @@
                     "imageReference": "[variables('imageReference')]",
                     "osDisk": {
                         "createOption": "FromImage",
-                        "caching": "ReadWrite"
+                        "caching": "ReadWrite",
+                        "diskSizeGB": "[parameters('rbhDiskSize')]"
                     }
                 },
                 "networkProfile": {
