@@ -397,7 +397,8 @@
 					{
 						"name": "enableHsm",
 						"type": "Microsoft.Common.CheckBox",
-						"label": "Enable HSM"
+						"label": "Enable HSM",
+						"toolTip": "Enable this for the HSM options to be visible"
 					},
 					{
 						"name": "hsmStorageDetails",
@@ -455,6 +456,7 @@
 						"name": "enablePolicyEngine",
 						"type": "Microsoft.Common.CheckBox",
 						"label": "Deploy Policy Engine",
+						"toolTip": "Enable this for the Policy Engine options to be visible",
 						"visible": "[steps('hsm').enableHsm]"
 					},
 					{
