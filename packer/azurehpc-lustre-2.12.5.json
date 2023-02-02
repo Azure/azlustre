@@ -23,7 +23,7 @@
         },
         {
             "environment_vars": [
-                "lemur_version=2.1.3"
+                "lemur_version=2.1.5"
             ],
             "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
             "inline": [
