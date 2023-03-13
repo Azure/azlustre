@@ -128,7 +128,7 @@ else
 
 		mds_ip=$(ping -c 1 $mds | head -1 | sed 's/^[^)]*(//g;s/).*$//g')
 
-		$script_dir/lfsoss.sh $mds_ip "$devices" $ost_index
+		$script_dir/lfsoss.sh $mds_ip "$(echo $devices)" $ost_index
 
 	fi
 
