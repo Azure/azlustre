@@ -102,11 +102,11 @@ These are the parameters that can be used when deploying:
 |----------------|------------------|--------------------|---------------------|
 | mdsSku         | Standard_L8s_v2  | Standard_D8_v3     | Standard_D8_v3      |
 | ossSku         | Standard_L48s_v2 | Standard_D48_v3    | Standard_D48_v3     |
-| mdtStorageSku  | Premium_LRS      | Premium_LRS        | Standard_LRS        |
+| mdtStorageSku  | Ephemeral        | Premium_LRS        | Standard_LRS        |
 | mdtCacheOption | None             | ReadWrite          | ReadWrite           |
 | mdtDiskSize    | 0                | 1024               | 1024                |
 | mdtNumDisks    | 0                | 2                  | 2                   |
-| ostStorageSku  | Premium_LRS      | Premium_LRS        | Standard_LRS        |
+| ostStorageSku  | Ephemeral        | Premium_LRS        | Standard_LRS        |
 | ostCacheOption | None             | None               | None                |
 | ostDiskSize    | 0                | 1024               | 8192                |
 | ostNumDisks    | 0                | 6                  | 4                   |
