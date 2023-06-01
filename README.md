@@ -34,7 +34,7 @@ The additional parameters can be used to enable HSM for the Lustre deployment.
 
 | Parameter        | Description                         |
 |------------------|-------------------------------------|
-| storageAccount   | The storage account to use for HSM  |
+| storageAccount   | The storage account to use for HSM (`Blob only do not enable HNS/ADLSgen2`)  |
 | storageContainer | The container name to use           |
 | storageSas       | The SAS key for the storage account |
 
